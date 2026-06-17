@@ -10,7 +10,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 // Pastikan Backend Laravel berjalan
-const API_URL = "http://3.26.144.68/api";
+const API_URL = "/api";
 
 const AuthContext = createContext();
 
