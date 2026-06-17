@@ -31,7 +31,7 @@ export default function AdminLayout() {
         const token = localStorage.getItem("admin_token") || localStorage.getItem("token");
         if (!token) return;
 
-        const res = await axios.get("http://127.0.0.1:8000/api/admin/notifications", {
+        const res = await axios.get("/api/admin/notifications", {
           headers: { Authorization: `Bearer ${token}` }
         });
         
