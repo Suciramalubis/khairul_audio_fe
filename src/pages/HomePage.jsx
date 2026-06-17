@@ -174,7 +174,7 @@ function HeroSlider() {
             style={{ filter: 'brightness(0.95) saturate(1.05)' }}
           />
           {/* Overlay gradien transparan agar gambar menyatu dengan background langit */}
-          <div className="absolute inset-0 bg-gradient-to-l from-white/60 via-transparent to-transparent md:from-white/40 pointer-events-none" />
+          <div className={`absolute inset-0 ${slide.align === 'right' ? 'bg-gradient-to-r' : 'bg-gradient-to-l'} from-white/60 via-transparent to-transparent md:from-white/40 pointer-events-none`} />
         </div>
       </div>
 
