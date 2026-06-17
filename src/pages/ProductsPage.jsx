@@ -15,6 +15,7 @@ import Footer from '../components/Footer';
 import { useCart } from '../context/CartContext';
 import { addToWishlist } from '../services/wishlistService';
 import Swal from 'sweetalert2';
+import { API_BASE_URL, getImageUrl } from '../config/api';
 
 // Helper diskon
 const getPriceInfo = (product) => {
@@ -73,9 +74,9 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [wishlistLoading, setWishlistLoading] = useState(null);
   const [cartLoading, setCartLoading] = useState(null);
-  
+
   const [toast, setToast] = useState(null);
-  
+
   const { addToCart } = useCart();
   const location = useLocation();
   const navigate = useNavigate();
@@ -87,13 +88,13 @@ export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState(categoryQuery);
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
-  
+
   const [sortBy, setSortBy] = useState('terbaru');
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
   const sortDropdownRef = useRef(null);
 
   const categories = ['Head Unit', 'Speaker', 'Subwoofer', 'Power & DSP', 'Aksesoris'];
-  
+
   const sortOptions = [
     { value: 'terbaru', label: 'Produk Terbaru' },
     { value: 'termurah', label: 'Harga Terendah' },
@@ -120,7 +121,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     let result = [...products];
-    
+
     if (searchQuery) {
       result = result.filter((p) =>
         p.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -141,7 +142,7 @@ export default function ProductsPage() {
     } else {
       result.sort((a, b) => b.id - a.id);
     }
-    
+
     setFilteredProducts(result);
   }, [products, searchQuery, selectedCategory, minPrice, maxPrice, sortBy]);
 
@@ -149,7 +150,7 @@ export default function ProductsPage() {
     setLoading(true);
     try {
       const res = await axios.get(
-        'http://127.0.0.1/khairul_audio_ecommerce/khairul_audio_be/public/api/products'
+        `${API_BASE_URL}/products`
       );
       let dataArray = res.data.data || res.data;
       setProducts(Array.isArray(dataArray) ? dataArray : []);
@@ -178,7 +179,7 @@ export default function ProductsPage() {
     e.preventDefault();
     e.stopPropagation();
     const token = localStorage.getItem('token');
-    
+
     if (!token) {
       Swal.fire({
         icon: 'warning',
@@ -232,7 +233,7 @@ export default function ProductsPage() {
     <div className="min-h-screen bg-[#f8f8f8] flex flex-col relative overflow-hidden">
       <Navbar />
       <main className="flex-grow max-w-[1400px] mx-auto w-full px-4 sm:px-6 py-6 md:py-6">
-        
+
         {/* Header Section */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 mb-6">
           <div>
@@ -243,7 +244,7 @@ export default function ProductsPage() {
               Menampilkan {filteredProducts.length} produk audio mobil terbaik untuk kendaraan Anda.
             </p>
           </div>
-          
+
           {/* Custom Dropdown Urutkan */}
           <div className="relative z-30" ref={sortDropdownRef}>
             <button
@@ -256,8 +257,8 @@ export default function ProductsPage() {
                   {sortOptions.find(opt => opt.value === sortBy)?.label}
                 </span>
               </div>
-              <HiChevronDown 
-                className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isSortDropdownOpen ? 'rotate-180' : ''}`} 
+              <HiChevronDown
+                className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isSortDropdownOpen ? 'rotate-180' : ''}`}
               />
             </button>
 
@@ -272,11 +273,10 @@ export default function ProductsPage() {
                         setSortBy(option.value);
                         setIsSortDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
-                        sortBy === option.value
+                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${sortBy === option.value
                           ? 'bg-blue-50 text-blue-700 font-bold border-l-2 border-blue-500'
                           : 'text-gray-600 hover:bg-gray-50 font-medium border-l-2 border-transparent'
-                      }`}
+                        }`}
                     >
                       {option.label}
                     </button>
@@ -292,11 +292,10 @@ export default function ProductsPage() {
           <div className="flex items-center gap-3 min-w-max">
             <button
               onClick={() => navigateToCategory('')}
-              className={`px-5 py-2.5 rounded-full text-sm font-medium transition whitespace-nowrap ${
-                selectedCategory === ''
+              className={`px-5 py-2.5 rounded-full text-sm font-medium transition whitespace-nowrap ${selectedCategory === ''
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
                   : 'bg-white border border-gray-200 text-gray-700 hover:border-blue-500 hover:text-blue-600 hover:shadow-sm'
-              }`}
+                }`}
             >
               Semua Produk
             </button>
@@ -304,11 +303,10 @@ export default function ProductsPage() {
               <button
                 key={idx}
                 onClick={() => navigateToCategory(cat)}
-                className={`px-5 py-2.5 rounded-full text-sm font-medium transition whitespace-nowrap ${
-                  selectedCategory === cat
+                className={`px-5 py-2.5 rounded-full text-sm font-medium transition whitespace-nowrap ${selectedCategory === cat
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
                     : 'bg-white border border-gray-200 text-gray-700 hover:border-blue-500 hover:text-blue-600 hover:shadow-sm'
-                }`}
+                  }`}
               >
                 {cat}
               </button>
@@ -336,15 +334,7 @@ export default function ProductsPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
             {filteredProducts.map((product) => {
               let imgUrl = product.image_url || product.image || product.gambar || null;
-              if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('data:image')) {
-                let cleanPath = imgUrl.replace(/^\/+/, '');
-                if (cleanPath.startsWith('public/')) {
-                  cleanPath = cleanPath.replace('public/', 'storage/');
-                } else if (!cleanPath.startsWith('storage/')) {
-                  cleanPath = `storage/${cleanPath}`;
-                }
-                imgUrl = `http://127.0.0.1/khairul_audio_ecommerce/khairul_audio_be/public/${cleanPath}`;
-              }
+              imgUrl = getImageUrl(imgUrl);
 
               const priceInfo = getPriceInfo(product);
               const isCartLoading = cartLoading === product.id;
@@ -407,7 +397,7 @@ export default function ProductsPage() {
                         <span className="text-slate-300 text-[10px] mx-0.5">•</span>
                         <span className="text-[11px] text-slate-500">100+ terjual</span>
                       </div>
-                      
+
                       <div className="mt-2 mb-1">
                         <div className="flex items-baseline gap-1.5 flex-wrap">
                           <span className="text-[15px] font-black text-slate-900 leading-none">
@@ -421,15 +411,14 @@ export default function ProductsPage() {
                         </div>
                       </div>
                     </Link>
-                    
+
                     <button
                       onClick={(e) => handleAddToCart(e, product)}
                       disabled={isCartLoading}
-                      className={`mt-auto w-full py-2 border text-[12px] font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                        isCartLoading
+                      className={`mt-auto w-full py-2 border text-[12px] font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${isCartLoading
                           ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-wait'
                           : 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-500 hover:text-white hover:border-blue-500 hover:shadow-md'
-                      }`}
+                        }`}
                     >
                       {isCartLoading ? (
                         <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>

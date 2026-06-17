@@ -16,6 +16,7 @@ import {
   HiViewList,
 } from 'react-icons/hi';
 import Swal from 'sweetalert2'; // ✅ Tambahkan import SweetAlert2
+import { API_BASE_URL, getImageUrl } from '../../config/api';
 
 const catEmoji = {
   Headphones: '🎧',
@@ -55,7 +56,7 @@ export default function ProductListAdmin() {
   const [sortBy, setSortBy] = useState('newest');
   const [categories, setCategories] = useState([]);
 
-  const API_URL = 'http://127.0.0.1:8000/api/admin/products';
+  const API_URL = `${API_BASE_URL}/admin/products`;
 
   useEffect(() => {
     fetchProducts();
@@ -99,7 +100,7 @@ export default function ProductListAdmin() {
         try {
           await axios.delete(`${API_URL}/${id}`);
           setProducts((prev) => prev.filter((p) => p.id !== id));
-          
+
           // Toast sukses ringan di pojok
           Swal.fire({
             title: "Terhapus!",
@@ -172,15 +173,15 @@ export default function ProductListAdmin() {
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      
+
       {/* HEADER SECTION */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Katalog Produk</h2>
           <p className="text-sm text-gray-500 mt-1">Kelola dan pantau inventaris Khairul Audio.</p>
         </div>
-        <Link 
-          to="/admin/products/create" 
+        <Link
+          to="/admin/products/create"
           className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm"
         >
           <HiPlus className="w-5 h-5" />
@@ -206,7 +207,7 @@ export default function ProductListAdmin() {
       {/* TOOLBAR SECTION */}
       <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-4">
         <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-          
+
           {/* Search */}
           <div className="relative w-full md:max-w-md">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -268,8 +269,8 @@ export default function ProductListAdmin() {
           <div className="pt-4 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Kategori</label>
-              <select 
-                value={filterCategory} 
+              <select
+                value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
                 className="block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-lg"
               >
@@ -281,8 +282,8 @@ export default function ProductListAdmin() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Status Stok</label>
-              <select 
-                value={filterStock} 
+              <select
+                value={filterStock}
                 onChange={(e) => setFilterStock(e.target.value)}
                 className="block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-lg"
               >
@@ -293,7 +294,7 @@ export default function ProductListAdmin() {
               </select>
             </div>
             <div>
-              <button 
+              <button
                 onClick={resetFilters}
                 className="w-full sm:w-auto px-4 py-2 bg-white border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors"
               >
@@ -327,17 +328,17 @@ export default function ProductListAdmin() {
             {sortedProducts.map((item) => {
               const catName = item.category?.name || 'Uncategorized';
               const stockStat = getStockStatus(item.stock);
-              
+
               return (
                 <div key={item.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow group flex flex-col">
                   {/* Image Container */}
                   <div className="relative aspect-square bg-gray-50 flex items-center justify-center border-b border-gray-100 overflow-hidden">
                     {item.image_url ? (
-                      <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                      <img src={getImageUrl(item.image_url)} alt={item.name} className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-4xl">{catEmoji[catName] || '📦'}</span>
                     )}
-                    
+
                     {/* Hover Actions */}
                     <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Link to={`/admin/products/edit/${item.id}`} className="p-2 bg-white rounded-lg shadow-sm border border-gray-200 text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors">
@@ -357,7 +358,7 @@ export default function ProductListAdmin() {
                     </div>
                     <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-1">{item.name}</h3>
                     <p className="text-base font-bold text-gray-900 mt-auto mb-3">{fmtPrice(item.price)}</p>
-                    
+
                     {/* Stock Indicator */}
                     <div>
                       <div className="flex justify-between items-center mb-1">
@@ -399,7 +400,7 @@ export default function ProductListAdmin() {
                           <div className="flex items-center">
                             <div className="h-10 w-10 flex-shrink-0 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200 overflow-hidden">
                               {item.image_url ? (
-                                <img className="h-10 w-10 object-cover" src={item.image_url} alt="" />
+                                <img className="h-10 w-10 object-cover" src={getImageUrl(item.image_url)} alt="" />
                               ) : (
                                 <span className="text-xl">{catEmoji[catName] || '📦'}</span>
                               )}

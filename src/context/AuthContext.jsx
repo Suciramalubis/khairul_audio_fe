@@ -8,9 +8,9 @@ import React, {
 } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../config/api";
 
-// Pastikan Backend Laravel berjalan
-const API_URL = "/api";
+const API_URL = API_BASE_URL;
 
 const AuthContext = createContext();
 
@@ -60,7 +60,7 @@ export function AuthProvider({ children }) {
       setUser(res.data.user);
       setToken(res.data.access_token);
 
-      return res.data.user; 
+      return res.data.user;
     } catch (err) {
       throw new Error(
         err.response?.data?.message || "Login gagal, periksa email dan password Anda"
@@ -79,7 +79,7 @@ export function AuthProvider({ children }) {
         password_confirmation,
       });
 
-      navigate("/login"); 
+      navigate("/login");
     } catch (err) {
       throw new Error(
         err.response?.data?.message || "Registrasi gagal"
@@ -90,18 +90,18 @@ export function AuthProvider({ children }) {
   // 6. LOGOUT (DIPERBAIKI)
   const logout = async () => {
     try {
-        if (token) {
-            await axios.post(`${API_URL}/logout`);
-        }
-    } catch (error) { 
-        // FIX 2: Gunakan variabel 'error' agar tidak dianggap unused
-        console.error("Logout server error:", error);
+      if (token) {
+        await axios.post(`${API_URL}/logout`);
+      }
+    } catch (error) {
+      // FIX 2: Gunakan variabel 'error' agar tidak dianggap unused
+      console.error("Logout server error:", error);
     }
 
     setUser(null);
     setToken(null);
     localStorage.clear();
-    
+
     navigate("/login");
   };
 

@@ -4,10 +4,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import Swal from 'sweetalert2';
-import { 
-  HiOutlineShieldCheck, 
-  HiOutlineTruck, 
-  HiOutlineCheckCircle, 
+import {
+  HiOutlineShieldCheck,
+  HiOutlineTruck,
+  HiOutlineCheckCircle,
   HiVolumeUp,
   HiOutlineAdjustments,
   HiOutlineTemplate,
@@ -19,8 +19,9 @@ import {
   HiChevronRight
 } from 'react-icons/hi';
 import heroImage from '../assets/Img_3.png';
+import { API_BASE_URL, getImageUrl } from '../config/api';
 
-const API_URL = 'http://127.0.0.1/khairul_audio_ecommerce/khairul_audio_be/public/api/products';
+const API_URL = `${API_BASE_URL}/products`;
 const heroSlides = [
   {
     id: 1,
@@ -158,18 +159,17 @@ function HeroSlider() {
     // Background gradien langit: dari sky-100 ke white (bisa juga dari sky-50 ke white)
     <div className="relative overflow-hidden bg-gradient-to-b from-sky-100 to-white">
       <div className="flex flex-col md:flex-row items-stretch">
-        <div className={`w-full md:w-1/2 flex items-center px-6 md:px-12 py-15 md:py-17 ${
-          slide.align === 'right' ? 'md:order-2 bg-transparent' : 'bg-transparent'
-        }`}>
+        <div className={`w-full md:w-1/2 flex items-center px-6 md:px-12 py-15 md:py-17 ${slide.align === 'right' ? 'md:order-2 bg-transparent' : 'bg-transparent'
+          }`}>
           <div className="max-w-md mx-auto md:mx-0 w-full">
             {renderTextContent()}
           </div>
         </div>
 
         <div className="w-full md:w-1/2 relative min-h-[250px] md:min-h-0">
-          <img 
-            src={heroImage} 
-            alt="hero visual" 
+          <img
+            src={heroImage}
+            alt="hero visual"
             className="absolute inset-0 w-full h-full object-cover"
             style={{ filter: 'brightness(0.95) saturate(1.05)' }}
           />
@@ -178,7 +178,7 @@ function HeroSlider() {
         </div>
       </div>
 
-      <button 
+      <button
         onClick={next}
         className="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm border border-white/30 flex items-center justify-center text-white hover:bg-blue-600 hover:border-blue-600 transition-colors"
         aria-label="Next slide"
@@ -245,7 +245,7 @@ export default function HomePage() {
     setWishlistLoading(product.id);
     try {
       await axios.post(
-        `http://127.0.0.1:8000/api/wishlist/add/${product.id}`,
+        `${API_BASE_URL}/wishlist/add/${product.id}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -355,15 +355,7 @@ export default function HomePage() {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                 {newProducts.map(product => {
                   let imgUrl = product.image_url || product.image || product.gambar || null;
-                  if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('data:image')) {
-                    let cleanPath = imgUrl.replace(/^\/+/, '');
-                    if (cleanPath.startsWith('public/')) {
-                      cleanPath = cleanPath.replace('public/', 'storage/');
-                    } else if (!cleanPath.startsWith('storage/')) {
-                      cleanPath = `storage/${cleanPath}`;
-                    }
-                    imgUrl = `http://127.0.0.1/khairul_audio_ecommerce/khairul_audio_be/public/${cleanPath}`;
-                  }
+                  imgUrl = getImageUrl(imgUrl);
 
                   const priceInfo = getPriceInfo(product);
 
@@ -392,9 +384,9 @@ export default function HomePage() {
                           </div>
                         )}
                         {!priceInfo.hasDiscount && (
-                           <div className="absolute top-2 left-2 z-10 bg-emerald-500 text-white text-[10px] font-black px-2 py-1 rounded-md shadow-md">
-                             NEW
-                           </div>
+                          <div className="absolute top-2 left-2 z-10 bg-emerald-500 text-white text-[10px] font-black px-2 py-1 rounded-md shadow-md">
+                            NEW
+                          </div>
                         )}
                         {imgUrl ? (
                           <img
@@ -420,7 +412,7 @@ export default function HomePage() {
                           <h4 className="text-[12px] text-slate-800 font-semibold line-clamp-2 leading-snug min-h-[32px]">
                             {product.name}
                           </h4>
-                          
+
                           <div className="flex items-center gap-1">
                             <HiStar className="w-3 h-3 text-amber-400 flex-shrink-0" />
                             <span className="text-[10px] text-slate-500 font-medium">4.9</span>

@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useCart } from '../context/CartContext'; 
-import Swal from 'sweetalert2'; 
+import { useCart } from '../context/CartContext';
+import Swal from 'sweetalert2';
 import { addToWishlist, removeFromWishlist, checkWishlistStatus } from '../services/wishlistService';
+import { API_BASE_URL as CENTRAL_API_BASE_URL, getImageUrl } from '../config/api';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { 
-  HiOutlineShoppingCart, 
-  HiOutlineHeart, 
-  HiOutlineShare, 
+import {
+  HiOutlineShoppingCart,
+  HiOutlineHeart,
+  HiOutlineShare,
   HiStar,
   HiOutlineChevronLeft,
   HiOutlineChevronRight,
@@ -44,7 +45,7 @@ const getPriceInfo = (product) => {
 export default function ProductDetailPage() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [relatedProducts, setRelatedProducts] = useState([]); 
+  const [relatedProducts, setRelatedProducts] = useState([]);
   const [quantity, setQuantity] = useState(1);
   const [mainImage, setMainImage] = useState('');
   const [activeTab, setActiveTab] = useState('Deskripsi');
@@ -59,8 +60,8 @@ export default function ProductDetailPage() {
   const { addToCart } = useCart();
   const imgRef = useRef(null);
 
-  const API_BASE_URL = 'http://127.0.0.1:8000/api/products';
-  
+  const API_URL = `${CENTRAL_API_BASE_URL}/products`;
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') setSelectedReviewImage(null);
@@ -76,11 +77,11 @@ export default function ProductDetailPage() {
         setQuantity(1);
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
-        const response = await axios.get(`${API_BASE_URL}/${id}`);
+        const response = await axios.get(`${API_URL}/${id}`);
         const productData = response.data.data || response.data;
-        
+
         setProduct(productData);
-        setMainImage(productData.image_url);
+        setMainImage(getImageUrl(productData.image_url));
         setSelectedImageIndex(0);
       } catch (error) {
         console.error("Gagal mengambil data produk:", error);
@@ -107,12 +108,12 @@ export default function ProductDetailPage() {
     if (!product) return;
     async function fetchRelated() {
       try {
-        const response = await axios.get(API_BASE_URL);
+        const response = await axios.get(API_URL);
         const allProducts = response.data.data || response.data;
         if (Array.isArray(allProducts)) {
           const related = allProducts
             .filter(item => item.category_id === product.category_id && item.id !== product.id)
-            .slice(0, 10); 
+            .slice(0, 10);
           setRelatedProducts(related);
         }
       } catch (error) {
@@ -125,11 +126,12 @@ export default function ProductDetailPage() {
   const getAllImages = () => {
     if (!product) return [];
     const imgArray = [];
-    if (product.image_url) imgArray.push(product.image_url);
+    if (product.image_url) imgArray.push(getImageUrl(product.image_url));
     const galleries = product.galleries || product.gallery;
     if (galleries && Array.isArray(galleries) && galleries.length > 0) {
       galleries.forEach(gal => {
-        if (gal.image_url && !imgArray.includes(gal.image_url)) imgArray.push(gal.image_url);
+        const galImg = getImageUrl(gal.image_url);
+        if (galImg && !imgArray.includes(galImg)) imgArray.push(galImg);
       });
     }
     return imgArray.filter(Boolean);
@@ -164,8 +166,8 @@ export default function ProductDetailPage() {
   const handleBuyNow = () => {
     const token = localStorage.getItem('token');
     if (!token) {
-        Swal.fire({ icon: 'warning', title: 'Belum Login', text: 'Silakan login terlebih dahulu untuk melanjutkan pembelian.', confirmButtonColor: '#3b82f6' }).then(() => navigate('/login'));
-        return;
+      Swal.fire({ icon: 'warning', title: 'Belum Login', text: 'Silakan login terlebih dahulu untuk melanjutkan pembelian.', confirmButtonColor: '#3b82f6' }).then(() => navigate('/login'));
+      return;
     }
     const directCheckoutItem = { ...product, product_id: product.id, quantity: quantity, price: Number(product.price) };
     sessionStorage.setItem('directCheckoutData', JSON.stringify([directCheckoutItem]));
@@ -225,7 +227,7 @@ export default function ProductDetailPage() {
   };
 
   const handleWishlistRelated = async (e, item) => {
-    e.preventDefault(); 
+    e.preventDefault();
     e.stopPropagation();
     const token = localStorage.getItem('token');
     if (!token) {
@@ -280,7 +282,7 @@ export default function ProductDetailPage() {
       <Navbar />
 
       <main className="container mx-auto px-4 sm:px-6 py-6 md:py-8">
-        
+
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-xs md:text-sm text-gray-400 mb-6 font-medium">
           <Link to="/" className="hover:text-blue-600 transition">Beranda</Link>
@@ -301,7 +303,7 @@ export default function ProductDetailPage() {
         {/* Detail Produk - Card Utama */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 md:p-8 mb-8">
           <div className="flex flex-col lg:flex-row gap-8 lg:gap-8 items-start">
-            
+
             {/* Kiri: Galeri Gambar */}
             <div className="lg:w-4/12">
               <div className="relative w-full rounded-2xl overflow-hidden bg-slate-50 group flex items-center justify-center" style={{ aspectRatio: '1/1' }}>
@@ -332,9 +334,8 @@ export default function ProductDetailPage() {
                         setMainImage(img);
                         setSelectedImageIndex(idx);
                       }}
-                      className={`flex-shrink-0 w-14 h-14 bg-slate-50 rounded-lg overflow-hidden border-2 transition p-1 ${
-                        selectedImageIndex === idx ? 'border-blue-500 shadow-sm' : 'border-transparent opacity-70 hover:opacity-100'
-                      }`}
+                      className={`flex-shrink-0 w-14 h-14 bg-slate-50 rounded-lg overflow-hidden border-2 transition p-1 ${selectedImageIndex === idx ? 'border-blue-500 shadow-sm' : 'border-transparent opacity-70 hover:opacity-100'
+                        }`}
                     >
                       <img src={img} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
                     </button>
@@ -358,7 +359,7 @@ export default function ProductDetailPage() {
                 <span className="text-slate-600">{product?.reviews ? product.reviews.length : 0} Ulasan</span>
                 <span className="text-slate-300">|</span>
                 <span>Terjual <span className="text-slate-700 font-semibold">100+</span></span>
-                
+
                 <div className="flex gap-2 ml-auto">
                   <button onClick={handleShare} className="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-50 rounded-md transition" title="Bagikan">
                     <HiOutlineShare className="w-4 h-4" />
@@ -470,9 +471,8 @@ export default function ProductDetailPage() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`py-3.5 font-bold text-xs md:text-sm transition-all relative ${
-                    activeTab === tab ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'
-                  }`}
+                  className={`py-3.5 font-bold text-xs md:text-sm transition-all relative ${activeTab === tab ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'
+                    }`}
                 >
                   {tab}
                   {activeTab === tab && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 rounded-t-full"></div>}
@@ -535,14 +535,10 @@ export default function ProductDetailPage() {
                               <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
                                 {review.images.map((img, imgIdx) => {
                                   let imgPath = img.image_url;
-                                  if (imgPath && !imgPath.startsWith('http')) {
-                                    let cleanPath = imgPath.startsWith('/') ? imgPath.substring(1) : imgPath;
-                                    if (!cleanPath.startsWith('storage/')) cleanPath = `storage/${cleanPath}`;
-                                    imgPath = `http://127.0.0.1:8000/${cleanPath}`;
-                                  }
+                                  imgPath = getImageUrl(imgPath);
                                   return (
-                                    <div 
-                                      key={imgIdx} 
+                                    <div
+                                      key={imgIdx}
                                       onClick={() => setSelectedReviewImage(imgPath)}
                                       className="relative w-16 h-16 rounded-md border border-gray-200 overflow-hidden shrink-0 cursor-pointer hover:border-blue-400 transition-colors group"
                                     >
@@ -587,12 +583,7 @@ export default function ProductDetailPage() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
               {relatedProducts.map((item) => {
                 let imgUrl = item.image_url;
-                if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('data:image')) {
-                  let cleanPath = imgUrl.replace(/^\/+/, '');
-                  if (cleanPath.startsWith('public/')) cleanPath = cleanPath.replace('public/', 'storage/');
-                  else if (!cleanPath.startsWith('storage/')) cleanPath = `storage/${cleanPath}`;
-                  imgUrl = `http://127.0.0.1/khairul_audio_ecommerce/khairul_audio_be/public/${cleanPath}`;
-                }
+                imgUrl = getImageUrl(imgUrl);
                 const priceInfo = getPriceInfo(item);
 
                 return (
@@ -677,12 +668,12 @@ export default function ProductDetailPage() {
       <Footer />
 
       {selectedReviewImage && (
-        <div 
+        <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 transition-opacity duration-300"
           onClick={() => setSelectedReviewImage(null)}
         >
           <div className="relative max-w-4xl max-h-[90vh] w-full flex justify-center items-center" onClick={(e) => e.stopPropagation()}>
-            <button 
+            <button
               onClick={() => setSelectedReviewImage(null)}
               className="absolute -top-10 right-0 md:-right-12 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-all"
               title="Tutup (Esc)"
@@ -691,10 +682,10 @@ export default function ProductDetailPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            <img 
-              src={selectedReviewImage} 
-              alt="Review Full Screen" 
-              className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.5)] ring-1 ring-white/10 animate-[scale-up_0.2s_ease-out]" 
+            <img
+              src={selectedReviewImage}
+              alt="Review Full Screen"
+              className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.5)] ring-1 ring-white/10 animate-[scale-up_0.2s_ease-out]"
             />
           </div>
         </div>
