@@ -58,7 +58,8 @@ function NotificationIcon() {
         const response = await axios.get(`${API_BASE_URL}/notifications`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const unreadExists = response.data.notifications.some(
+        const notifications = response.data.notifications || response.data;
+        const unreadExists = Array.isArray(notifications) && notifications.some(
           n => n.read_at === null && n.is_read != 1 && n.is_read !== true
         );
         setHasUnread(unreadExists);

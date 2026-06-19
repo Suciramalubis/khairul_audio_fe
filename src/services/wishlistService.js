@@ -1,7 +1,6 @@
 // src/services/wishlistService.js
 import axios from 'axios';
-
-const API_BASE_URL = '/api';
+import { API_BASE_URL } from '../config/api';
 
 // Helper untuk mendapatkan token (sesuaikan dengan cara Anda menyimpan token)
 const getToken = () => localStorage.getItem('token');
