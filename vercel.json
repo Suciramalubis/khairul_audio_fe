@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "http://ec2-98-81-155-19.compute-1.amazonaws.com/api/:path*"
+      "destination": "https://api.bawin.my.id/api/:path*"
     },
     {
       "source": "/(.*)",

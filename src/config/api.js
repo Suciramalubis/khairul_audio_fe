@@ -1,4 +1,4 @@
-export const API_BASE_URL = "/api";
+export const API_BASE_URL = "https://api.bawin.my.id/api";
 
 export const getImageUrl = (path) => {
     if (!path) return "";
