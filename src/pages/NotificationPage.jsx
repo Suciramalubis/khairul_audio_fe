@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-  HiOutlineBell, 
-  HiCheck, 
-  HiArrowLeft, 
+import {
+  HiOutlineBell,
+  HiCheck,
+  HiArrowLeft,
   HiOutlineShoppingBag,
   HiOutlineTag,
   HiOutlineTruck,
@@ -14,6 +14,7 @@ import {
   HiArrowRight
 } from 'react-icons/hi';
 import { Link, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config/api';
 
 export default function NotificationPage() {
   const [notifications, setNotifications] = useState([]);
@@ -29,10 +30,10 @@ export default function NotificationPage() {
   const fetchNotifications = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://127.0.0.1:8000/api/notifications', {
+      const response = await axios.get(`${API_BASE_URL}/notifications`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -40,9 +41,9 @@ export default function NotificationPage() {
         .filter(n => new Date(n.created_at) >= sevenDaysAgo)
         .map(n => ({
           ...n,
-          isRead: n.read_at !== null || n.is_read == 1 || n.is_read === true, 
-          time: new Date(n.created_at).toLocaleDateString('id-ID', { 
-            day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' 
+          isRead: n.read_at !== null || n.is_read == 1 || n.is_read === true,
+          time: new Date(n.created_at).toLocaleDateString('id-ID', {
+            day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
           }),
           safeTitle: n.title || 'Informasi',
           safeMessage: n.message || 'Ada pembaruan dari sistem.'
@@ -59,7 +60,7 @@ export default function NotificationPage() {
   const markAsRead = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`http://127.0.0.1:8000/api/notifications/${id}/read`, {}, {
+      await axios.post(`${API_BASE_URL}/notifications/${id}/read`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setNotifications(prev =>
@@ -75,7 +76,7 @@ export default function NotificationPage() {
   const markAllAsRead = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://127.0.0.1:8000/api/notifications/read-all', {}, {
+      await axios.post(`${API_BASE_URL}/notifications/read-all`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setNotifications(prev =>
@@ -89,7 +90,7 @@ export default function NotificationPage() {
   const deleteNotification = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://127.0.0.1:8000/api/notifications/${id}`, {
+      await axios.delete(`${API_BASE_URL}/notifications/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setNotifications(prev => prev.filter(notif => notif.id !== id));
@@ -134,13 +135,13 @@ export default function NotificationPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white font-sans pb-12">
-      
+
       {/* Header Modern */}
       <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
         <div className="max-w-3xl mx-auto px-5 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className="p-2 -ml-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all"
             >
               <HiArrowLeft className="w-5 h-5" />
@@ -156,7 +157,7 @@ export default function NotificationPage() {
               </h1>
             </div>
           </div>
-          
+
           {unreadCount > 0 && (
             <button
               onClick={markAllAsRead}
@@ -170,7 +171,7 @@ export default function NotificationPage() {
       </div>
 
       <div className="max-w-3xl mx-auto mt-5 px-4 sm:px-5">
-        
+
         {/* Tabs bergaya modern */}
         {notifications.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-1 mb-5">
@@ -179,11 +180,10 @@ export default function NotificationPage() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${
-                    activeTab === tab 
-                      ? 'bg-slate-900 text-white shadow-sm' 
+                  className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${activeTab === tab
+                      ? 'bg-slate-900 text-white shadow-sm'
                       : 'text-slate-600 hover:bg-slate-100'
-                  }`}
+                    }`}
                 >
                   {tab}
                 </button>
@@ -214,11 +214,10 @@ export default function NotificationPage() {
                 <div
                   key={notif.id}
                   onClick={() => handleNotificationClick(notif)}
-                  className={`relative bg-white rounded-xl border transition-all duration-200 cursor-pointer group overflow-hidden ${
-                    !notif.isRead 
-                      ? 'border-l-4 border-l-blue-500 shadow-sm hover:shadow-md' 
+                  className={`relative bg-white rounded-xl border transition-all duration-200 cursor-pointer group overflow-hidden ${!notif.isRead
+                      ? 'border-l-4 border-l-blue-500 shadow-sm hover:shadow-md'
                       : 'border border-slate-200 hover:border-slate-300 hover:shadow-sm'
-                  }`}
+                    }`}
                 >
                   <div className="p-4 flex gap-3.5">
                     {/* Icon Area */}

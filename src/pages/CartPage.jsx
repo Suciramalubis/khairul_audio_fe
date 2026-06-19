@@ -9,6 +9,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import Swal from "sweetalert2";
 import { addToWishlist } from '../services/wishlistService';
+import { API_BASE_URL, getImageUrl } from "../config/api";
 
 import {
   HiOutlineTrash,
@@ -21,7 +22,7 @@ import {
   HiOutlineHeart
 } from "react-icons/hi";
 
-const API_URL = 'http://127.0.0.1/khairul_audio_ecommerce/khairul_audio_be/public/api/products';
+const API_URL = `${API_BASE_URL}/products`;
 
 // --- FUNGSI HELPER CEK DISKON ---
 const getPriceInfo = (product) => {
@@ -31,7 +32,7 @@ const getPriceInfo = (product) => {
     if (product.discount_end_date) {
       const endDate = new Date(product.discount_end_date);
       if (new Date() > endDate) {
-        return { hasDiscount: false, price: originalPrice, originalPrice }; 
+        return { hasDiscount: false, price: originalPrice, originalPrice };
       }
     }
     const discountAmount = originalPrice * (Number(product.discount_percent) / 100);
@@ -54,7 +55,7 @@ export default function CartPage() {
   const [discount, setDiscount] = useState(0);
   const [selectedItems, setSelectedItems] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
-  
+
   const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [wishlistLoading, setWishlistLoading] = useState(null);
 
@@ -63,10 +64,10 @@ export default function CartPage() {
       try {
         const response = await axios.get(API_URL);
         const allProducts = response.data.data || response.data;
-        
-        if(Array.isArray(allProducts)){
-           const shuffled = allProducts.sort(() => 0.10 - Math.random());
-           setRecommendedProducts(shuffled.slice(0, 10));
+
+        if (Array.isArray(allProducts)) {
+          const shuffled = allProducts.sort(() => 0.10 - Math.random());
+          setRecommendedProducts(shuffled.slice(0, 10));
         }
       } catch (err) {
         console.error("Gagal mengambil produk rekomendasi:", err);
@@ -180,10 +181,10 @@ export default function CartPage() {
       try {
         const deletePromises = selectedItems.map((productId) => removeFromCart(productId));
         await Promise.all(deletePromises);
-        
+
         setSelectedItems([]);
         setSelectAll(false);
-        
+
         Swal.fire({
           icon: "success",
           title: "Terhapus!",
@@ -195,7 +196,7 @@ export default function CartPage() {
         }).then(() => {
           window.location.reload();
         });
-        
+
       } catch (err) {
         console.error("Error bulk delete produk:", err);
         Swal.fire({
@@ -246,12 +247,12 @@ export default function CartPage() {
     setIsProcessing(true);
     setTimeout(() => {
       setIsProcessing(false);
-      
+
       const checkoutDataPayload = {
-          items: selectedCartItems,
-          appliedDiscount: discount
+        items: selectedCartItems,
+        appliedDiscount: discount
       };
-      
+
       sessionStorage.setItem('cartCheckoutData', JSON.stringify(checkoutDataPayload));
       navigate("/checkout");
     }, 1000);
@@ -262,47 +263,47 @@ export default function CartPage() {
     e.stopPropagation();
 
     const token = localStorage.getItem('token');
-    
+
     if (!token) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Gagal',
-            text: 'Harap Login terlebih dahulu untuk menyimpan ke Wishlist',
-            confirmButtonColor: '#3b82f6'
-        }).then(() => {
-            navigate('/login');
-        });
-        return;
+      Swal.fire({
+        icon: 'warning',
+        title: 'Gagal',
+        text: 'Harap Login terlebih dahulu untuk menyimpan ke Wishlist',
+        confirmButtonColor: '#3b82f6'
+      }).then(() => {
+        navigate('/login');
+      });
+      return;
     }
 
     setWishlistLoading(product.id);
 
     try {
-        await addToWishlist(product.id);
+      await addToWishlist(product.id);
 
-        Swal.fire({
-            icon: 'success',
-            title: 'Disimpan!',
-            text: `${product.name} ditambahkan ke Wishlist.`,
-            toast: true,
-            position: 'top-end',
-            timer: 1500,
-            showConfirmButton: false,
-        });
+      Swal.fire({
+        icon: 'success',
+        title: 'Disimpan!',
+        text: `${product.name} ditambahkan ke Wishlist.`,
+        toast: true,
+        position: 'top-end',
+        timer: 1500,
+        showConfirmButton: false,
+      });
 
     } catch (error) {
-        const msg = error.response?.data?.message || 'Gagal menyimpan ke Wishlist (Produk mungkin sudah ada)';
-        Swal.fire({
-            icon: 'error',
-            title: 'Oops...',
-            text: msg,
-            toast: true,
-            position: 'top-end',
-            timer: 2000,
-            showConfirmButton: false,
-        });
+      const msg = error.response?.data?.message || 'Gagal menyimpan ke Wishlist (Produk mungkin sudah ada)';
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: msg,
+        toast: true,
+        position: 'top-end',
+        timer: 2000,
+        showConfirmButton: false,
+      });
     } finally {
-        setWishlistLoading(null);
+      setWishlistLoading(null);
     }
   };
 
@@ -332,24 +333,24 @@ export default function CartPage() {
       <Navbar />
       <main className="flex-grow container mx-auto px-0 sm:px-6 py-4 sm:py-6">
         <h1 className="hidden sm:block md:text-2xl font-black text-slate-900 mb-5">Keranjang Belanja</h1>
-        
+
         <div className="flex flex-col lg:flex-row gap-4 sm:gap-8">
-          
+
           {/* KOLOM KIRI: DAFTAR PRODUK KERANJANG & PRODUK TERKAIT */}
           <div className="flex-1 space-y-4 sm:space-y-6">
-            
+
             {/* KOTAK DAFTAR KERANJANG */}
             <div className="bg-white border-y sm:border border-slate-200 sm:shadow-sm sm:rounded-md overflow-hidden">
-              
+
               {/* HEADER DAFTAR KERANJANG (Pilih Semua) */}
               <div className="border-b border-slate-200 p-3 sm:p-4 bg-slate-50 flex justify-between items-center h-[50px] sm:h-[60px]">
                 <label className="flex items-center gap-3 cursor-pointer text-[13px] sm:text-[14px] font-bold text-slate-700 select-none">
                   <input type="checkbox" checked={selectAll} onChange={handleSelectAll} className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" />
                   <span>Pilih Semua <span className="text-slate-500 font-normal">({cartItems.length})</span></span>
                 </label>
-                
+
                 {selectedItems.length > 0 && (
-                  <button 
+                  <button
                     onClick={handleRemoveSelected}
                     className="text-[12px] sm:text-[13px] font-bold text-red-500 hover:text-red-600 transition-colors flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50"
                   >
@@ -363,10 +364,10 @@ export default function CartPage() {
                 {cartItems.map((item) => {
                   const isSelected = selectedItems.includes(item.product.id);
                   const priceInfo = getPriceInfo(item.product);
-                  
+
                   return (
                     <div key={item.product.id} className={`p-3 sm:p-5 transition-colors flex gap-3 sm:gap-4 items-center sm:items-start ${isSelected ? 'bg-blue-50/20' : 'bg-white hover:bg-slate-50/50'}`}>
-                      
+
                       {/* Checkbox Individual */}
                       <div className="flex-shrink-0 flex items-center h-full sm:pt-4">
                         <input type="checkbox" checked={isSelected} onChange={() => handleSelectItem(item.product.id)} className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" />
@@ -375,7 +376,7 @@ export default function CartPage() {
                       {/* Gambar Produk */}
                       <Link to={`/product/${item.product.id}`} className="flex-shrink-0">
                         <div className="w-20 h-20 sm:w-24 sm:h-24 bg-slate-50 border border-slate-200 rounded p-1 flex items-center justify-center">
-                          <img src={item.product.image_url} alt={item.product.name} className="max-w-full max-h-full object-contain" />
+                          <img src={getImageUrl(item.product.image_url)} alt={item.product.name} className="max-w-full max-h-full object-contain" />
                         </div>
                       </Link>
 
@@ -390,7 +391,7 @@ export default function CartPage() {
                             <HiOutlineTrash className="w-4 h-4 sm:w-5 sm:h-5" />
                           </button>
                         </div>
-                        
+
                         <div className="flex justify-between items-end mt-auto">
                           <div>
                             <p className="font-bold text-blue-600 text-[14px] sm:text-[16px] leading-none mb-1">
@@ -402,7 +403,7 @@ export default function CartPage() {
                               </p>
                             )}
                           </div>
-                          
+
                           {/* Input Qty */}
                           <div className="flex items-center border border-slate-300 rounded h-7 sm:h-8 bg-white">
                             <button onClick={() => handleUpdateQuantity(item.product.id, item.quantity - 1, item.product.stock)} disabled={item.quantity <= 1} className="w-7 sm:w-8 h-full flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-30 transition">
@@ -428,19 +429,10 @@ export default function CartPage() {
                 <div className="flex items-center gap-2 mb-4">
                   <h3 className="text-lg sm:text-xl font-bold text-slate-900">Mungkin Anda Suka</h3>
                 </div>
-                
+
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                   {recommendedProducts.map((product) => {
-                    let imgUrl = product.image_url || product.image || product.gambar || null;
-                    if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('data:image')) {
-                      let cleanPath = imgUrl.replace(/^\/+/, '');
-                      if (cleanPath.startsWith('public/')) {
-                        cleanPath = cleanPath.replace('public/', 'storage/');
-                      } else if (!cleanPath.startsWith('storage/')) {
-                        cleanPath = `storage/${cleanPath}`;
-                      }
-                      imgUrl = `http://127.0.0.1/khairul_audio_ecommerce/khairul_audio_be/public/${cleanPath}`;
-                    }
+                    let imgUrl = getImageUrl(product.image_url || product.image || product.gambar);
 
                     const priceInfo = getPriceInfo(product);
                     const isWishlistLoading = wishlistLoading === product.id;
@@ -525,11 +517,10 @@ export default function CartPage() {
                               }
                             }}
                             disabled={product.stock <= 0}
-                            className={`mt-2 w-full py-1.5 border text-[10px] sm:text-[11px] font-bold rounded-sm transition-colors flex items-center justify-center gap-1 ${
-                              product.stock <= 0
+                            className={`mt-2 w-full py-1.5 border text-[10px] sm:text-[11px] font-bold rounded-sm transition-colors flex items-center justify-center gap-1 ${product.stock <= 0
                                 ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed'
                                 : 'bg-blue-50 border-blue-400 text-blue-700 hover:bg-blue-500 hover:text-white hover:border-blue-500'
-                            }`}
+                              }`}
                           >
                             <HiOutlineShoppingBag className="w-3.5 h-3.5" /> {product.stock > 0 ? 'Tambah' : 'Habis'}
                           </button>
@@ -562,7 +553,7 @@ export default function CartPage() {
                   <span>Total Harga ({selectedCartItems.length} Barang)</span>
                   <span>Rp {new Intl.NumberFormat("id-ID").format(subtotal)}</span>
                 </div>
-                
+
                 {discount > 0 && (
                   <div className="flex justify-between font-medium text-emerald-600">
                     <span>Total Diskon</span>
@@ -580,14 +571,13 @@ export default function CartPage() {
                 </div>
               </div>
 
-              <button 
-                onClick={handleCheckout} 
-                disabled={isProcessing || selectedCartItems.length === 0} 
-                className={`w-full font-bold py-3 text-[15px] rounded transition-all duration-200 shadow-sm ${
-                  selectedCartItems.length === 0 
-                  ? "bg-slate-200 text-slate-400 cursor-not-allowed" 
-                  : "bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98]"
-                }`}
+              <button
+                onClick={handleCheckout}
+                disabled={isProcessing || selectedCartItems.length === 0}
+                className={`w-full font-bold py-3 text-[15px] rounded transition-all duration-200 shadow-sm ${selectedCartItems.length === 0
+                    ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                    : "bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98]"
+                  }`}
               >
                 {isProcessing ? "Memproses..." : `Beli (${selectedCartItems.length})`}
               </button>
@@ -605,18 +595,18 @@ export default function CartPage() {
       {/* FIXED BOTTOM BAR MOBILE (Shopee Style Checkout Navbar)     */}
       {/* ========================================================== */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 shadow-[0_-4px_15px_rgba(0,0,0,0.08)] pb-safe">
-        
+
         {/* TINGKAT 1: VOUCHER / PROMO */}
         <div className="bg-blue-50/95 backdrop-blur-md border-t border-blue-200 px-3 py-2 flex items-center gap-2">
           {/* Ikon Tiket/Voucher */}
           <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
           </svg>
-          <input 
-            type="text" 
-            value={promoCode} 
-            onChange={(e) => setPromoCode(e.target.value)} 
-            placeholder="Gunakan Kode Promo" 
+          <input
+            type="text"
+            value={promoCode}
+            onChange={(e) => setPromoCode(e.target.value)}
+            placeholder="Gunakan Kode Promo"
             className="flex-1 px-2 py-1.5 bg-white border border-blue-200 rounded text-[12px] font-medium uppercase outline-none focus:border-blue-500 shadow-sm transition-colors"
           />
           <button onClick={handleApplyPromo} className="bg-slate-900 text-white px-4 py-1.5 rounded text-[12px] font-bold hover:bg-slate-800 active:scale-95 transition-transform">
@@ -641,11 +631,10 @@ export default function CartPage() {
             <button
               onClick={handleCheckout}
               disabled={isProcessing || selectedCartItems.length === 0}
-              className={`px-5 py-2.5 text-[13px] font-bold rounded transition-all shadow-sm ${
-                selectedCartItems.length === 0
+              className={`px-5 py-2.5 text-[13px] font-bold rounded transition-all shadow-sm ${selectedCartItems.length === 0
                   ? "bg-slate-200 text-slate-400 cursor-not-allowed"
                   : "bg-blue-600 text-white active:bg-blue-700 active:scale-95"
-              }`}
+                }`}
             >
               {isProcessing ? "Proses..." : `Checkout (${selectedCartItems.length})`}
             </button>

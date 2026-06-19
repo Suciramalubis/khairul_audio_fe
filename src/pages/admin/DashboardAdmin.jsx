@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../../config/api";
 import {
   HiOutlineCurrencyDollar,
   HiOutlineShoppingBag,
@@ -19,14 +20,14 @@ export default function DashboardAdmin() {
   const [products, setProducts] = useState([]);
   const [lowStockList, setLowStockList] = useState([]);
   const [lowStockCount, setLowStockCount] = useState(0);
-  
+
   // State untuk Data Pesanan Asli
   const [orders, setOrders] = useState([]);
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [totalRevenue, setTotalRevenue] = useState(0);
-  
+
   const [loading, setLoading] = useState(true);
-  
+
   // --- CHART STATE ---
   const [chartMode, setChartMode] = useState("minggu");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -38,8 +39,8 @@ export default function DashboardAdmin() {
     new Date().getFullYear() - 2,
   ];
 
-  const BULAN_LABELS = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
-  const HARI_LABELS  = ["Sen","Sel","Rab","Kam","Jum","Sab","Min"];
+  const BULAN_LABELS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+  const HARI_LABELS = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 
   // Helper untuk ambil token
   const getToken = () => localStorage.getItem("admin_token") || localStorage.getItem("token");
@@ -64,22 +65,22 @@ export default function DashboardAdmin() {
     try {
       // 1. Mengambil data Produk
       try {
-        const resProducts = await axios.get("http://127.0.0.1:8000/api/admin/products", config);
+        const resProducts = await axios.get(`${API_BASE_URL}/admin/products`, config);
         const allProducts = resProducts.data;
         setProducts(allProducts);
         const allLowStock = allProducts.filter((p) => p.stock < 5);
         setLowStockCount(allLowStock.length);
-        setLowStockList([...allLowStock].sort((a, b) => a.stock - b.stock).slice(0, 5)); 
+        setLowStockList([...allLowStock].sort((a, b) => a.stock - b.stock).slice(0, 5));
       } catch (err) {
         console.warn("Gagal load produk:", err);
       }
 
       // 2. Mengambil data Pesanan
       try {
-        const resOrders = await axios.get("http://127.0.0.1:8000/api/admin/orders", config);
+        const resOrders = await axios.get(`${API_BASE_URL}/admin/orders`, config);
         const allOrders = resOrders.data.data ? resOrders.data.data : resOrders.data;
         setOrders(allOrders);
-        
+
         // Hitung pesanan pending
         const pending = allOrders.filter(o => o.status === 'pending');
         setPendingOrdersCount(pending.length);
@@ -120,10 +121,10 @@ export default function DashboardAdmin() {
       validOrders.forEach(o => {
         const rawDate = o.created_at || o.order_date || o.date;
         if (!rawDate) return;
-        
-        const safeDateStr = String(rawDate).replace(/-/g, '/').split('.')[0]; 
+
+        const safeDateStr = String(rawDate).replace(/-/g, '/').split('.')[0];
         const d = new Date(safeDateStr);
-        
+
         if (d >= startOfWeek && d <= endOfWeek) {
           const dayIdx = d.getDay() === 0 ? 6 : d.getDay() - 1;
           weekTotals[dayIdx] += Number(o.total_price || o.total || 0);
@@ -148,9 +149,9 @@ export default function DashboardAdmin() {
       validOrders.forEach(o => {
         const rawDate = o.created_at || o.order_date || o.date;
         if (!rawDate) return;
-        const safeDateStr = String(rawDate).replace(/-/g, '/').split('.')[0]; 
+        const safeDateStr = String(rawDate).replace(/-/g, '/').split('.')[0];
         const d = new Date(safeDateStr);
-        
+
         if (d.getFullYear() === selectedYear && d.getMonth() === targetMonth) {
           monthTotals[d.getDate() - 1] += Number(o.total_price || o.total || 0);
         }
@@ -173,9 +174,9 @@ export default function DashboardAdmin() {
       validOrders.forEach(o => {
         const rawDate = o.created_at || o.order_date || o.date;
         if (!rawDate) return;
-        const safeDateStr = String(rawDate).replace(/-/g, '/').split('.')[0]; 
+        const safeDateStr = String(rawDate).replace(/-/g, '/').split('.')[0];
         const d = new Date(safeDateStr);
-        
+
         if (d.getFullYear() === selectedYear) {
           yearTotals[d.getMonth()] += Number(o.total_price || o.total || 0);
         }
@@ -199,8 +200,8 @@ export default function DashboardAdmin() {
   const chartSubtitle = chartMode === "minggu"
     ? "Pendapatan harian minggu ini"
     : chartMode === "bulan"
-    ? `Pendapatan harian bulan ${new Date().toLocaleString("id-ID", {month:"long"})} ${selectedYear}`
-    : `Pendapatan bulanan tahun ${selectedYear}`;
+      ? `Pendapatan harian bulan ${new Date().toLocaleString("id-ID", { month: "long" })} ${selectedYear}`
+      : `Pendapatan bulanan tahun ${selectedYear}`;
 
   const validRecentOrders = orders.filter(o => o && (o.id || o.invoice || o.invoice_number));
 
@@ -214,7 +215,7 @@ export default function DashboardAdmin() {
       `}</style>
 
       <div className="dashboard-root space-y-2 p-2 lg:p-1 text-slate-800">
-        
+
         {/* HEADER */}
         <div className="animate-[fadeIn_0.4s_ease-out] flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 pb-3">
           <div>
@@ -297,7 +298,7 @@ export default function DashboardAdmin() {
 
         {/* DATA MANAGEMENT WORKSPACE */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
+
           {/* Diagram Grafik Batang */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 lg:p-6 shadow-sm lg:col-span-2 flex flex-col justify-between">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -310,8 +311,8 @@ export default function DashboardAdmin() {
                 <div className="bg-slate-100 p-1 rounded-xl flex gap-1 border border-slate-200/60">
                   {[
                     { key: "minggu", label: "Minggu" },
-                    { key: "bulan",  label: "Bulan" },
-                    { key: "tahun",  label: "Tahun" },
+                    { key: "bulan", label: "Bulan" },
+                    { key: "tahun", label: "Tahun" },
                   ].map(item => (
                     <button
                       key={item.key}
@@ -347,10 +348,10 @@ export default function DashboardAdmin() {
               {loading ? (
                 <div className="w-full flex items-end gap-2 h-full pb-1">
                   {Array.from({ length: chartMode === "tahun" ? 12 : 7 }).map((_, i) => (
-                    <div 
-                      key={i} 
-                      className="flex-1 bg-slate-100 rounded-t animate-pulse" 
-                      style={{ height: `${[40,60,30,75,50,85,55,45,65,35,70,55][i % 12]}%` }}
+                    <div
+                      key={i}
+                      className="flex-1 bg-slate-100 rounded-t animate-pulse"
+                      style={{ height: `${[40, 60, 30, 75, 50, 85, 55, 45, 65, 35, 70, 55][i % 12]}%` }}
                     />
                   ))}
                 </div>
@@ -366,7 +367,7 @@ export default function DashboardAdmin() {
                         Rp {new Intl.NumberFormat('id-ID').format(d.value)}
                       </div>
                     </div>
-                    
+
                     {(chartMode !== "bulan" || (i % 5 === 0 || i === chartData.length - 1)) && (
                       <span className={`text-[10px] font-bold mt-2 ${d.active ? 'text-blue-600' : 'text-slate-400'}`}>
                         {d.label}
@@ -457,14 +458,14 @@ export default function DashboardAdmin() {
               <h3 className="text-base font-bold text-slate-900">Pesanan Terkini</h3>
               <p className="text-xs text-slate-400 mt-0.5 font-medium">5 log transaksi terakhir sistem e-commerce</p>
             </div>
-            <Link 
-              to="/admin/orders" 
+            <Link
+              to="/admin/orders"
               className="bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100 font-bold text-xs px-4 py-2 rounded-xl transition-colors w-fit"
             >
               Lihat Seluruh Pesanan
             </Link>
           </div>
-          
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs md:text-sm border-collapse">
               <thead>
@@ -499,9 +500,9 @@ export default function DashboardAdmin() {
                       const parts = order.shipping_address.split('|');
                       customerName = parts[0] ? parts[0].trim() : 'Guest';
                     }
-                    
+
                     const price = Number(order.total_price || order.total || 0);
-                    
+
                     let formattedDate = '-';
                     if (order.created_at) {
                       formattedDate = new Date(order.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -511,10 +512,10 @@ export default function DashboardAdmin() {
 
                     const invoiceStr = order.invoice_number || order.invoice || `INV-${order.id}`;
                     const courierStr = order.shipping_courier || order.courier || '-';
-                    
+
                     return (
-                      <TableRow 
-                        key={order.id || index} 
+                      <TableRow
+                        key={order.id || index}
                         invoice={invoiceStr}
                         name={customerName}
                         total={`Rp ${new Intl.NumberFormat('id-ID').format(price)}`}
@@ -539,17 +540,17 @@ export default function DashboardAdmin() {
 /* ===== SUB COMPONENT ROW DATA LIST ===== */
 function TableRow({ invoice, name, total, courier, status, date, onClick }) {
   const statusConfig = {
-    pending:     { label: "Menunggu", bg: "bg-amber-50 border-amber-200 text-amber-800", dot: "bg-amber-500" },
+    pending: { label: "Menunggu", bg: "bg-amber-50 border-amber-200 text-amber-800", dot: "bg-amber-500" },
     processing: { label: "Diproses", bg: "bg-blue-50 border-blue-200 text-blue-800", dot: "bg-blue-500" },
-    shipped:    { label: "Dikirim",  bg: "bg-purple-50 border-purple-200 text-purple-800", dot: "bg-purple-500" },
-    completed:  { label: "Selesai",  bg: "bg-emerald-50 border-emerald-200 text-emerald-800", dot: "bg-emerald-500" },
-    cancelled:  { label: "Dibatalkan", bg: "bg-rose-50 border-rose-200 text-rose-800", dot: "bg-rose-500" }
+    shipped: { label: "Dikirim", bg: "bg-purple-50 border-purple-200 text-purple-800", dot: "bg-purple-500" },
+    completed: { label: "Selesai", bg: "bg-emerald-50 border-emerald-200 text-emerald-800", dot: "bg-emerald-500" },
+    cancelled: { label: "Dibatalkan", bg: "bg-rose-50 border-rose-200 text-rose-800", dot: "bg-rose-500" }
   };
-  
+
   const s = statusConfig[String(status).toLowerCase()] || { label: status, bg: "bg-slate-50 border-slate-200 text-slate-800", dot: "bg-slate-400" };
 
   return (
-    <tr 
+    <tr
       onClick={onClick}
       className="hover:bg-blue-50/50 transition-colors group cursor-pointer"
     >

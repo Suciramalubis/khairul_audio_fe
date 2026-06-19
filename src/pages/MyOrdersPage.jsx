@@ -12,6 +12,7 @@ import {
   HiArrowRight,
   HiOutlineSearch
 } from "react-icons/hi";
+import { API_BASE_URL, getImageUrl } from "../config/api";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -27,7 +28,7 @@ export default function MyOrdersPage() {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          "http://127.0.0.1:8000/api/user/orders",
+          `${API_BASE_URL}/user/orders`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setOrders(Array.isArray(response.data) ? response.data : []);
@@ -113,11 +114,10 @@ export default function MyOrdersPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveFilter(tab.id)}
-                className={`pb-3 text-sm font-semibold transition-all duration-200 relative whitespace-nowrap ${
-                  activeFilter === tab.id
+                className={`pb-3 text-sm font-semibold transition-all duration-200 relative whitespace-nowrap ${activeFilter === tab.id
                     ? "text-blue-600"
                     : "text-slate-500 hover:text-slate-700"
-                }`}
+                  }`}
               >
                 {tab.label}
                 {activeFilter === tab.id && (
@@ -138,11 +138,7 @@ export default function MyOrdersPage() {
               const StatusIcon = statusConfig.icon;
               const productName = order.product_name || "Produk Telah Dihapus";
               const isDeleted = !order.product_name;
-              const imageUrl = order.product_image
-                ? order.product_image.startsWith("http")
-                  ? order.product_image
-                  : `http://127.0.0.1:8000${order.product_image}`
-                : null;
+              const imageUrl = getImageUrl(order.product_image);
 
               return (
                 <div

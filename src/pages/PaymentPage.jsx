@@ -11,6 +11,7 @@ import {
 } from "react-icons/hi";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { API_BASE_URL } from "../config/api";
 
 const formatNumber = (num) => String(num).replace(/(.{4})/g, "$1 ").trim();
 
@@ -89,7 +90,7 @@ export default function PaymentPage() {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `http://127.0.0.1:8000/api/user/orders/${id}`,
+        `${API_BASE_URL}/user/orders/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const orderData = response.data;
@@ -229,18 +230,16 @@ export default function PaymentPage() {
               <div key={idx} className="flex items-center">
                 <div className="flex flex-col items-center">
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                      step.completed
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step.completed
                         ? "bg-blue-600 text-white"
                         : "bg-slate-200 text-slate-500"
-                    }`}
+                      }`}
                   >
                     {step.completed ? <HiCheckCircle className="w-5 h-5" /> : idx + 1}
                   </div>
                   <span
-                    className={`text-xs font-semibold mt-1 ${
-                      step.active ? "text-blue-600" : "text-slate-400"
-                    }`}
+                    className={`text-xs font-semibold mt-1 ${step.active ? "text-blue-600" : "text-slate-400"
+                      }`}
                   >
                     {step.label}
                   </span>
@@ -257,46 +256,42 @@ export default function PaymentPage() {
             <div className="lg:col-span-8 space-y-6">
               {/* Timer Banner */}
               <div
-                className={`rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm border ${
-                  timeLeft === 0
+                className={`rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm border ${timeLeft === 0
                     ? "bg-red-50 border-red-200"
                     : isUrgent
-                    ? "bg-blue-50 border-blue-200"
-                    : "bg-blue-50 border-blue-200"
-                }`}
+                      ? "bg-blue-50 border-blue-200"
+                      : "bg-blue-50 border-blue-200"
+                  }`}
               >
                 <div>
                   <p
-                    className={`text-sm font-bold mb-1 ${
-                      timeLeft === 0
+                    className={`text-sm font-bold mb-1 ${timeLeft === 0
                         ? "text-red-700"
                         : isUrgent
-                        ? "text-blue-700"
-                        : "text-blue-800"
-                    }`}
+                          ? "text-blue-700"
+                          : "text-blue-800"
+                      }`}
                   >
                     {timeLeft === 0 ? "Waktu Pembayaran Habis" : "Selesaikan Pembayaran Dalam"}
                   </p>
                   <p
-                    className={`text-xs ${
-                      timeLeft === 0
+                    className={`text-xs ${timeLeft === 0
                         ? "text-red-600"
                         : isUrgent
-                        ? "text-blue-600"
-                        : "text-blue-700"
-                    }`}
+                          ? "text-blue-600"
+                          : "text-blue-700"
+                      }`}
                   >
                     Batas Akhir: <span className="font-semibold">{formatExpireDate(expireDateObj)}</span>
                   </p>
                 </div>
                 <div
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-mono text-xl font-bold tracking-widest ${
-                    timeLeft === 0
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-mono text-xl font-bold tracking-widest ${timeLeft === 0
                       ? "bg-red-100 text-red-700"
                       : isUrgent
-                      ? "bg-blue-100 text-blue-700"
-                      : "bg-white text-blue-600"
-                  }`}
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-white text-blue-600"
+                    }`}
                 >
                   <HiOutlineClock className="w-5 h-5" />
                   {formatTime(timeLeft)}
@@ -464,16 +459,14 @@ function AccordionItem({ id, title, expanded, setExpanded, steps }) {
         className="w-full flex justify-between items-center px-6 py-4 hover:bg-slate-50 transition group"
       >
         <span
-          className={`font-semibold text-sm transition ${
-            isOpen ? "text-blue-600" : "text-slate-700 group-hover:text-blue-600"
-          }`}
+          className={`font-semibold text-sm transition ${isOpen ? "text-blue-600" : "text-slate-700 group-hover:text-blue-600"
+            }`}
         >
           {title}
         </span>
         <HiOutlineChevronRight
-          className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${
-            isOpen ? "rotate-90" : ""
-          }`}
+          className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${isOpen ? "rotate-90" : ""
+            }`}
         />
       </button>
       {isOpen && (

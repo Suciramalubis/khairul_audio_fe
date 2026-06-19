@@ -3,11 +3,12 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
-import { 
-  HiArrowLeft, 
-  HiCloudUpload, 
-  HiX, 
-  HiCheckCircle, 
+import { API_BASE_URL } from '../../config/api';
+import {
+  HiArrowLeft,
+  HiCloudUpload,
+  HiX,
+  HiCheckCircle,
   HiPlus,
   HiOutlineInformationCircle,
   HiOutlineTag,
@@ -33,8 +34,8 @@ export default function ProductFormAdmin() {
     weight: '',
     dimensions: '',
     // ✅ Tambahan state untuk diskon
-    discount_percent: '', 
-    discount_end_date: '' 
+    discount_percent: '',
+    discount_end_date: ''
   });
 
   const [image, setImage] = useState(null);
@@ -50,8 +51,8 @@ export default function ProductFormAdmin() {
     let rawValue = e.target.value;
     let numericValue = rawValue.replace(/[^0-9]/g, '');
     let displayValue = numericValue ? Number(numericValue).toLocaleString('id-ID') : '';
-    setFormData({ 
-      ...formData, 
+    setFormData({
+      ...formData,
       price: numericValue,
       displayPrice: displayValue
     });
@@ -86,7 +87,7 @@ export default function ProductFormAdmin() {
   const handleGalleryChange = (e) => {
     const files = Array.from(e.target.files);
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
-    
+
     const validFiles = imageFiles.filter(file => file.size <= 5 * 1024 * 1024);
     if (validFiles.length !== imageFiles.length) {
       Swal.fire('Peringatan', 'Beberapa file melebihi 5MB dan tidak disertakan', 'warning');
@@ -109,15 +110,15 @@ export default function ProductFormAdmin() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     // ✅ Validasi logika diskon sederhana
     if (formData.discount_percent && !formData.discount_end_date) {
-        setLoading(false);
-        return Swal.fire('Perhatian', 'Jika memasukkan persentase diskon, batas waktu berakhir diskon juga harus diisi.', 'warning');
+      setLoading(false);
+      return Swal.fire('Perhatian', 'Jika memasukkan persentase diskon, batas waktu berakhir diskon juga harus diisi.', 'warning');
     }
     if (formData.discount_end_date && !formData.discount_percent) {
-        setLoading(false);
-        return Swal.fire('Perhatian', 'Masukkan persentase diskon (1-99) jika Anda menyetel tanggal diskon.', 'warning');
+      setLoading(false);
+      return Swal.fire('Perhatian', 'Masukkan persentase diskon (1-99) jika Anda menyetel tanggal diskon.', 'warning');
     }
 
     try {
@@ -129,17 +130,17 @@ export default function ProductFormAdmin() {
       data.append('description', formData.description);
       data.append('weight', formData.weight);
       data.append('dimensions', formData.dimensions);
-      
+
       // ✅ Tambahkan payload diskon
-      if(formData.discount_percent) data.append('discount_percent', formData.discount_percent);
-      if(formData.discount_end_date) data.append('discount_end_date', formData.discount_end_date);
-      
+      if (formData.discount_percent) data.append('discount_percent', formData.discount_percent);
+      if (formData.discount_end_date) data.append('discount_end_date', formData.discount_end_date);
+
       if (image) data.append('image', image);
       if (galleryImages.length > 0) {
         galleryImages.forEach((file) => data.append('gallery[]', file));
       }
 
-      await axios.post('http://127.0.0.1:8000/api/admin/products', data, {
+      await axios.post(`${API_BASE_URL}/admin/products`, data, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
@@ -152,7 +153,7 @@ export default function ProductFormAdmin() {
       }).then(() => {
         navigate('/admin/products');
       });
-      
+
     } catch (error) {
       console.error('❌ Gagal simpan produk:', error.response);
       Swal.fire({
@@ -181,7 +182,7 @@ export default function ProductFormAdmin() {
     if (!formData.price || !formData.discount_percent) return null;
     const price = Number(formData.price);
     const disc = Number(formData.discount_percent);
-    if(disc <= 0 || disc >= 100) return null;
+    if (disc <= 0 || disc >= 100) return null;
     return price - (price * (disc / 100));
   };
   const discountedPrice = calculateDiscount();
@@ -189,8 +190,8 @@ export default function ProductFormAdmin() {
   return (
     <div className="max-w-5xl mx-auto pb-8 font-sans text-gray-900 animate-fadeIn">
       <div className="flex items-center gap-4 mb-6">
-        <Link 
-          to="/admin/products" 
+        <Link
+          to="/admin/products"
           className="p-2 bg-white border border-gray-300 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
         >
           <HiArrowLeft className="w-5 h-5" />
@@ -201,12 +202,12 @@ export default function ProductFormAdmin() {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-6 items-start">
-        
+
         {/* ==============================
             LEFT COLUMN
             ============================== */}
         <div className="flex-1 w-full space-y-6">
-          
+
           {/* 1. Informasi Dasar */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200 bg-gray-50/50">
@@ -220,12 +221,12 @@ export default function ProductFormAdmin() {
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Nama Produk <span className="text-red-500">*</span>
                 </label>
-                <input 
-                  type="text" 
-                  name="name" 
-                  required 
+                <input
+                  type="text"
+                  name="name"
+                  required
                   className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-colors"
-                  onChange={handleChange} 
+                  onChange={handleChange}
                   value={formData.name}
                   placeholder="Contoh: Speaker JBL Stage 3 6x9 inch"
                 />
@@ -234,11 +235,11 @@ export default function ProductFormAdmin() {
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Deskripsi Produk
                 </label>
-                <textarea 
-                  name="description" 
-                  rows="4" 
+                <textarea
+                  name="description"
+                  rows="4"
                   className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-colors resize-y"
-                  onChange={handleChange} 
+                  onChange={handleChange}
                   value={formData.description}
                   placeholder="Jelaskan spesifikasi, keunggulan, dan detail produk..."
                 />
@@ -274,9 +275,8 @@ export default function ProductFormAdmin() {
                   </div>
                 ) : (
                   <label
-                    className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 cursor-pointer transition-colors w-full sm:w-64 h-48 ${
-                      dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400'
-                    }`}
+                    className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 cursor-pointer transition-colors w-full sm:w-64 h-48 ${dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400'
+                      }`}
                     onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                     onDragLeave={() => setDragOver(false)}
                     onDrop={handleDrop}
@@ -330,11 +330,11 @@ export default function ProductFormAdmin() {
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">Rp</span>
-                    <input 
-                      type="text" 
-                      required 
+                    <input
+                      type="text"
+                      required
                       className={`w-full pl-9 pr-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-colors ${discountedPrice ? 'text-gray-400 line-through' : 'text-gray-900'}`}
-                      onChange={handlePriceChange} 
+                      onChange={handlePriceChange}
                       value={formData.displayPrice}
                       placeholder="0"
                     />
@@ -344,13 +344,13 @@ export default function ProductFormAdmin() {
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Stok <span className="text-red-500">*</span>
                   </label>
-                  <input 
-                    type="number" 
-                    name="stock" 
-                    required 
+                  <input
+                    type="number"
+                    name="stock"
+                    required
                     className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-colors"
-                    onChange={handleChange} 
-                    value={formData.stock} 
+                    onChange={handleChange}
+                    value={formData.stock}
                     min="0"
                     placeholder="0"
                   />
@@ -360,7 +360,7 @@ export default function ProductFormAdmin() {
               {/* ✅ BAGIAN DISKON (BARU) */}
               <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-lg">
                 <h3 className="text-sm font-semibold text-blue-800 flex items-center gap-2 mb-4">
-                   <HiOutlineTicket className="w-4 h-4" /> Atur Diskon (Opsional)
+                  <HiOutlineTicket className="w-4 h-4" /> Atur Diskon (Opsional)
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -368,39 +368,39 @@ export default function ProductFormAdmin() {
                       Potongan Harga (%)
                     </label>
                     <div className="relative">
-                        <input 
-                          type="number" 
-                          name="discount_percent" 
-                          className="w-full pl-3 pr-8 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                          onChange={handleChange} 
-                          value={formData.discount_percent} 
-                          min="1" max="99"
-                          placeholder="Misal: 15"
-                        />
-                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm font-medium">%</span>
+                      <input
+                        type="number"
+                        name="discount_percent"
+                        className="w-full pl-3 pr-8 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        onChange={handleChange}
+                        value={formData.discount_percent}
+                        min="1" max="99"
+                        placeholder="Misal: 15"
+                      />
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm font-medium">%</span>
                     </div>
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">
                       Berlaku Sampai
                     </label>
-                    <input 
-                      type="datetime-local" 
-                      name="discount_end_date" 
+                    <input
+                      type="datetime-local"
+                      name="discount_end_date"
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                      onChange={handleChange} 
-                      value={formData.discount_end_date} 
+                      onChange={handleChange}
+                      value={formData.discount_end_date}
                       min={new Date().toISOString().slice(0, 16)} // Tidak bisa pilih tanggal lampau
                     />
                   </div>
                 </div>
-                
+
                 {/* Preview Harga Diskon Realtime */}
                 {discountedPrice && (
-                    <div className="mt-4 pt-3 border-t border-blue-200/60 flex justify-between items-center">
-                        <span className="text-xs text-blue-600 font-medium">Harga setelah diskon:</span>
-                        <span className="text-lg font-bold text-red-600">Rp {discountedPrice.toLocaleString('id-ID')}</span>
-                    </div>
+                  <div className="mt-4 pt-3 border-t border-blue-200/60 flex justify-between items-center">
+                    <span className="text-xs text-blue-600 font-medium">Harga setelah diskon:</span>
+                    <span className="text-lg font-bold text-red-600">Rp {discountedPrice.toLocaleString('id-ID')}</span>
+                  </div>
                 )}
               </div>
 
@@ -421,11 +421,11 @@ export default function ProductFormAdmin() {
                   Berat (Gram)
                 </label>
                 <div className="relative">
-                  <input 
-                    type="number" 
-                    name="weight" 
+                  <input
+                    type="number"
+                    name="weight"
                     className="w-full pl-3 pr-10 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-colors"
-                    onChange={handleChange} 
+                    onChange={handleChange}
                     value={formData.weight}
                     placeholder="1000"
                   />
@@ -436,18 +436,18 @@ export default function ProductFormAdmin() {
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Dimensi PxLxT (Opsional)
                 </label>
-                <input 
-                  type="text" 
-                  name="dimensions" 
+                <input
+                  type="text"
+                  name="dimensions"
                   className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-colors"
-                  onChange={handleChange} 
+                  onChange={handleChange}
                   value={formData.dimensions}
                   placeholder="Contoh: 30x20x15"
                 />
               </div>
             </div>
           </div>
-          
+
         </div>
 
         {/* ==============================
@@ -468,11 +468,10 @@ export default function ProductFormAdmin() {
                   key={cat.id}
                   type="button"
                   onClick={() => setFormData({ ...formData, category_id: String(cat.id) })}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors text-sm ${
-                    formData.category_id === String(cat.id)
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors text-sm ${formData.category_id === String(cat.id)
                       ? 'bg-blue-50 text-blue-700 font-medium'
                       : 'text-gray-600 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-lg grayscale opacity-70">{cat.icon}</span>
@@ -485,7 +484,7 @@ export default function ProductFormAdmin() {
               ))}
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
             <h2 className="text-sm font-semibold text-gray-900 mb-4">Aksi</h2>
             <button
@@ -500,7 +499,7 @@ export default function ProductFormAdmin() {
               )}
               Simpan Produk
             </button>
-            
+
             <Link
               to="/admin/products"
               className="w-full block text-center py-2.5 px-4 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"

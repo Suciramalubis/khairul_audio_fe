@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API_BASE_URL } from "../config/api";
 import Swal from "sweetalert2";
 
 export default function VerifyOtpPage() {
@@ -77,7 +78,7 @@ export default function VerifyOtpPage() {
     setIsLoading(true);
     setErrorMsg("");
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/verify-otp", {
+      const response = await axios.post(`${API_BASE_URL}/verify-otp`, {
         email,
         otp: otpCode,
       });
@@ -105,8 +106,8 @@ export default function VerifyOtpPage() {
 
     setIsResending(true);
     try {
-      await axios.post("http://127.0.0.1:8000/api/resend-otp", { email });
-      
+      await axios.post(`${API_BASE_URL}/resend-otp`, { email });
+
       // Alert Sukses Kirim Ulang OTP
       Swal.fire({
         html: `
@@ -287,11 +288,10 @@ export default function VerifyOtpPage() {
                   type="button"
                   onClick={handleResend}
                   disabled={countdown > 0 || isResending}
-                  className={`font-bold transition-colors ml-1 ${
-                    countdown > 0 
-                      ? "text-slate-400 cursor-not-allowed" 
+                  className={`font-bold transition-colors ml-1 ${countdown > 0
+                      ? "text-slate-400 cursor-not-allowed"
                       : "text-slate-900 hover:text-amber-600 underline decoration-2 underline-offset-4"
-                  }`}
+                    }`}
                 >
                   {isResending ? "Mengirim..." : countdown > 0 ? `Kirim ulang dalam ${countdown}s` : "Kirim Ulang"}
                 </button>

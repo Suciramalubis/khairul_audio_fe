@@ -9,6 +9,7 @@ import {
 } from "react-icons/hi2";
 import Swal from "sweetalert2";
 import axios from "axios";
+import { API_BASE_URL } from "../config/api";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -89,7 +90,7 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      await axios.post("http://127.0.0.1:8000/api/register", {
+      await axios.post(`${API_BASE_URL}/register`, {
         name,
         email,
         password
@@ -129,8 +130,8 @@ export default function RegisterPage() {
 
     } catch (err) {
       console.error(err);
-      const errorMessage = err.response?.data?.message || err.response?.data?.email 
-        ? "Email ini sudah terdaftar di sistem kami." 
+      const errorMessage = err.response?.data?.message || err.response?.data?.email
+        ? "Email ini sudah terdaftar di sistem kami."
         : "Terjadi kesalahan sistem, silakan coba lagi nanti.";
 
       // ==========================================
@@ -252,13 +253,13 @@ export default function RegisterPage() {
               <label className="block text-sm font-medium text-slate-700 mb-2">Password</label>
               <div className="relative">
                 <HiOutlineLockClosed className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  placeholder="Minimal 8 karakter" 
-                  value={password} 
-                  onChange={(e) => setPassword(e.target.value)} 
-                  required 
-                  className="w-full h-12 rounded-xl border border-slate-300 bg-white pl-12 pr-12 text-slate-800 placeholder:text-slate-400 focus:border-amber-500 focus:ring-4 focus:ring-amber-100 outline-none transition" 
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Minimal 8 karakter"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full h-12 rounded-xl border border-slate-300 bg-white pl-12 pr-12 text-slate-800 placeholder:text-slate-400 focus:border-amber-500 focus:ring-4 focus:ring-amber-100 outline-none transition"
                 />
                 <button
                   type="button"
@@ -275,13 +276,13 @@ export default function RegisterPage() {
               <label className="block text-sm font-medium text-slate-700 mb-2">Konfirmasi password</label>
               <div className="relative">
                 <HiOutlineLockClosed className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                <input 
-                  type={showPasswordConfirm ? "text" : "password"} 
-                  placeholder="Ulangi password" 
-                  value={passwordConfirm} 
-                  onChange={(e) => setPasswordConfirm(e.target.value)} 
-                  required 
-                  className="w-full h-12 rounded-xl border border-slate-300 bg-white pl-12 pr-12 text-slate-800 placeholder:text-slate-400 focus:border-amber-500 focus:ring-4 focus:ring-amber-100 outline-none transition" 
+                <input
+                  type={showPasswordConfirm ? "text" : "password"}
+                  placeholder="Ulangi password"
+                  value={passwordConfirm}
+                  onChange={(e) => setPasswordConfirm(e.target.value)}
+                  required
+                  className="w-full h-12 rounded-xl border border-slate-300 bg-white pl-12 pr-12 text-slate-800 placeholder:text-slate-400 focus:border-amber-500 focus:ring-4 focus:ring-amber-100 outline-none transition"
                 />
                 <button
                   type="button"

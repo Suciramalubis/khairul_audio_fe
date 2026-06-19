@@ -15,6 +15,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useCart } from '../context/CartContext';
 import { getWishlist, removeFromWishlist } from '../services/wishlistService';
+import { getImageUrl } from "../config/api";
 
 // Helper harga & diskon
 const getPriceInfo = (product) => {
@@ -142,9 +143,9 @@ export default function WishlistPage() {
   const handleAddToCart = async (e, product) => {
     e.preventDefault();
     if (product.stock === 0) return;
-    
+
     addToCart(product, 1);
-    
+
     try {
       await removeFromWishlist(product.id);
       setItems((prev) => prev.filter((i) => i.id !== product.id));
@@ -179,9 +180,9 @@ export default function WishlistPage() {
       const availableIds = available.map(p => p.id);
       setItems((prev) => prev.filter((i) => !availableIds.includes(i.id)));
       setSelectedItems((prev) => prev.filter((i) => !availableIds.includes(i.id)));
-      Swal.fire({ 
-        title: 'Berhasil!', 
-        text: `${available.length} produk dipindah ke keranjang`, 
+      Swal.fire({
+        title: 'Berhasil!',
+        text: `${available.length} produk dipindah ke keranjang`,
         icon: 'success',
         toast: true,
         timer: 2000,
@@ -277,13 +278,7 @@ export default function WishlistPage() {
               {items.map((item) => {
                 const priceInfo = getPriceInfo(item);
                 const isSelected = selectedItems.includes(item.id);
-                let imgUrl = item.image_url;
-                if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('data:image')) {
-                  let cleanPath = imgUrl.replace(/^\/+/, '');
-                  if (cleanPath.startsWith('public/')) cleanPath = cleanPath.replace('public/', 'storage/');
-                  else if (!cleanPath.startsWith('storage/')) cleanPath = `storage/${cleanPath}`;
-                  imgUrl = `http://127.0.0.1/khairul_audio_ecommerce/khairul_audio_be/public/${cleanPath}`;
-                }
+                let imgUrl = getImageUrl(item.image_url);
 
                 return (
                   <div
@@ -364,16 +359,15 @@ export default function WishlistPage() {
                           </span>
                         )}
                       </div>
-                      
+
                       {/* Tombol Tambah ke Keranjang */}
                       <button
                         onClick={(e) => handleAddToCart(e, item)}
                         disabled={item.stock === 0}
-                        className={`mt-2 w-full py-1.5 border text-[11px] font-bold rounded-sm transition-colors flex items-center justify-center gap-1 ${
-                          item.stock > 0
+                        className={`mt-2 w-full py-1.5 border text-[11px] font-bold rounded-sm transition-colors flex items-center justify-center gap-1 ${item.stock > 0
                             ? 'bg-blue-50 border-blue-400 text-blue-700 hover:bg-blue-500 hover:text-white hover:border-blue-500'
                             : 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed'
-                        }`}
+                          }`}
                       >
                         <HiOutlineShoppingBag className="w-3.5 h-3.5" /> {item.stock > 0 ? 'Tambah' : 'Habis'}
                       </button>

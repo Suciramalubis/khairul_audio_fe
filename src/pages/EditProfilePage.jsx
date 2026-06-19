@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { Link } from 'react-router-dom';
+import { API_BASE_URL } from '../config/api';
 import {
   HiUser,
   HiOutlineShieldCheck,
@@ -20,22 +21,22 @@ import AddressFormTab from '../components/Profile/AddressFormTab';
 
 export default function EditProfilePage() {
   // === STATE PROFIL ===
-  const [profile, setProfile] = useState({ 
-    name: '', email: '', phone: '', username: '', gender: '', birth_date: '' 
+  const [profile, setProfile] = useState({
+    name: '', email: '', phone: '', username: '', gender: '', birth_date: ''
   });
-  
+
   // === STATE KEAMANAN ===
-  const [passwordData, setPasswordData] = useState({ 
-    current_password: '', new_password: '', new_password_confirmation: '' 
+  const [passwordData, setPasswordData] = useState({
+    current_password: '', new_password: '', new_password_confirmation: ''
   });
-  
+
   // === STATE ALAMAT ===
   const [addresses, setAddresses] = useState([]);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
   const [addressForm, setAddressForm] = useState({
     label: '', recipient_name: '', phone: '', address: '', detail_address: '',
-    province_id: '', province_name: '', city_id: '', city_name: '', 
+    province_id: '', province_name: '', city_id: '', city_name: '',
     subdistrict_id: '', subdistrict_name: '', postal_code: '', is_default: false,
   });
 
@@ -49,7 +50,7 @@ export default function EditProfilePage() {
   const [addressSuggestions, setAddressSuggestions] = useState([]);
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
   const [addressSearchTimeout, setAddressSearchTimeout] = useState(null);
-  
+
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
 
@@ -57,7 +58,7 @@ export default function EditProfilePage() {
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem('user'));
     if (storedUser) {
-      setProfile({ 
+      setProfile({
         name: storedUser.name || '', email: storedUser.email || '', phone: storedUser.phone || '',
         username: storedUser.username || '', gender: storedUser.gender || '', birth_date: storedUser.birth_date || ''
       });
@@ -69,7 +70,7 @@ export default function EditProfilePage() {
   const fetchAddresses = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://127.0.0.1:8000/api/user/addresses', {
+      const response = await axios.get(`${API_BASE_URL}/user/addresses`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setAddresses(response.data);
@@ -84,10 +85,10 @@ export default function EditProfilePage() {
     setIsSearching(true);
     setShowResults(true);
     try {
-      const res = await axios.get(`http://127.0.0.1:8000/api/shipping/search?keyword=${searchKeyword}`);
+      const res = await axios.get(`${API_BASE_URL}/shipping/search?keyword=${searchKeyword}`);
       const data = res.data.data || res.data;
       setSearchResults(Array.isArray(data) ? data : []);
-      if(Array.isArray(data) && data.length === 0) {
+      if (Array.isArray(data) && data.length === 0) {
         Swal.fire("Tidak Ditemukan", "Lokasi tidak ditemukan.", "warning");
       }
     } catch (error) {
@@ -99,16 +100,16 @@ export default function EditProfilePage() {
   const selectLocation = (loc) => {
     let rawName = loc.name || loc.label || loc.text || '';
     if (typeof rawName === 'string') {
-        rawName = rawName.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+      rawName = rawName.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
     }
     const parts = rawName.split(',').map(p => p.trim());
     let pName = '-', cName = '-', sName = rawName;
     if (parts.length >= 4) {
-        pName = parts[parts.length - 1]; cName = parts[parts.length - 2]; sName = parts[parts.length - 3];
+      pName = parts[parts.length - 1]; cName = parts[parts.length - 2]; sName = parts[parts.length - 3];
     } else if (parts.length === 3) {
-        pName = parts[2]; cName = parts[1]; sName = parts[0];
+      pName = parts[2]; cName = parts[1]; sName = parts[0];
     } else if (parts.length === 2) {
-        pName = '-'; cName = parts[1]; sName = parts[0];
+      pName = '-'; cName = parts[1]; sName = parts[0];
     }
     if (loc.province_name || loc.province) pName = loc.province_name || loc.province;
     if (loc.city_name || loc.city) cName = loc.city_name || loc.city;
@@ -187,7 +188,7 @@ export default function EditProfilePage() {
 
     setMapCenter([lat, lon]);
     setMarkerPosition({ lat, lng: lon });
-    
+
     setAddressForm(prev => ({
       ...prev, address: display, postal_code: postCode, province_name: province,
       city_name: city, subdistrict_name: district, subdistrict_id: '', city_id: '', province_id: ''
@@ -196,17 +197,17 @@ export default function EditProfilePage() {
 
     if (district && city) {
       try {
-        const searchRes = await axios.get(`http://127.0.0.1:8000/api/shipping/search?keyword=${district} ${city}`);
+        const searchRes = await axios.get(`${API_BASE_URL}/shipping/search?keyword=${district} ${city}`);
         const data = searchRes.data.data || searchRes.data;
         if (Array.isArray(data) && data.length > 0) {
           const matched = data.find(loc => loc.subdistrict_name?.toLowerCase().includes(district.toLowerCase()) && loc.city_name?.toLowerCase().includes(city.toLowerCase())) || data[0];
-          
+
           if (matched && (matched.id || matched.subdistrict_id)) {
             const resolvedSubdistrictId = matched.id || matched.subdistrict_id;
             const resolvedCityId = matched.city_id || resolvedSubdistrictId;
             const resolvedProvinceId = matched.province_id || resolvedSubdistrictId;
-            setAddressForm(prev => ({ 
-              ...prev, 
+            setAddressForm(prev => ({
+              ...prev,
               subdistrict_id: String(resolvedSubdistrictId), city_id: String(resolvedCityId), province_id: String(resolvedProvinceId),
               subdistrict_name: matched.subdistrict_name || district, city_name: matched.city_name || city, province_name: matched.province_name || province
             }));
@@ -224,10 +225,10 @@ export default function EditProfilePage() {
       finalAddress = `${addressForm.address} (${addressForm.detail_address.trim()})`;
     }
     if (!addressForm.recipient_name || !addressForm.phone || !finalAddress) {
-      Swal.fire({ icon: 'error', title: 'Data Belum Lengkap', text: 'Mohon lengkapi Nama Penerima, Nomor Telepon, dan Alamat Lengkap.'}); return;
+      Swal.fire({ icon: 'error', title: 'Data Belum Lengkap', text: 'Mohon lengkapi Nama Penerima, Nomor Telepon, dan Alamat Lengkap.' }); return;
     }
     if (!addressForm.subdistrict_id || !addressForm.city_id || !addressForm.province_id) {
-      Swal.fire({ icon: 'error', title: 'Wilayah Tidak Valid', text: 'Sistem membutuhkan ID Provinsi, Kota, dan Kecamatan.'}); return;
+      Swal.fire({ icon: 'error', title: 'Wilayah Tidak Valid', text: 'Sistem membutuhkan ID Provinsi, Kota, dan Kecamatan.' }); return;
     }
 
     setLoading(true);
@@ -239,16 +240,16 @@ export default function EditProfilePage() {
       delete dataToSend.detail_address;
 
       if (editingAddress) {
-        await axios.put(`http://127.0.0.1:8000/api/user/addresses/${editingAddress.id}`, dataToSend, { headers: { Authorization: `Bearer ${token}` } });
+        await axios.put(`${API_BASE_URL}/user/addresses/${editingAddress.id}`, dataToSend, { headers: { Authorization: `Bearer ${token}` } });
       } else {
-        await axios.post('http://127.0.0.1:8000/api/user/addresses', dataToSend, { headers: { Authorization: `Bearer ${token}` } });
+        await axios.post(`${API_BASE_URL}/user/addresses`, dataToSend, { headers: { Authorization: `Bearer ${token}` } });
       }
 
       await fetchAddresses();
       setShowAddressForm(false); setEditingAddress(null); setSearchKeyword(''); setMarkerPosition(null);
       setAddressForm({ label: '', recipient_name: '', phone: '', address: '', detail_address: '', province_id: '', province_name: '', city_id: '', city_name: '', subdistrict_id: '', subdistrict_name: '', postal_code: '', is_default: false });
       Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Alamat berhasil disimpan', timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' });
-    } catch (err) { Swal.fire('Gagal', err.response?.data?.message || 'Terjadi kesalahan saat menyimpan', 'error'); } 
+    } catch (err) { Swal.fire('Gagal', err.response?.data?.message || 'Terjadi kesalahan saat menyimpan', 'error'); }
     finally { setLoading(false); }
   };
 
@@ -257,9 +258,9 @@ export default function EditProfilePage() {
     if (result.isConfirmed) {
       try {
         const token = localStorage.getItem('token');
-        await axios.delete(`http://127.0.0.1:8000/api/user/addresses/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+        await axios.delete(`${API_BASE_URL}/user/addresses/${id}`, { headers: { Authorization: `Bearer ${token}` } });
         await fetchAddresses();
-        Swal.fire({icon: 'success', title: 'Terhapus!', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500});
+        Swal.fire({ icon: 'success', title: 'Terhapus!', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
       } catch { Swal.fire('Gagal', 'Terjadi kesalahan', 'error'); }
     }
   };
@@ -267,9 +268,9 @@ export default function EditProfilePage() {
   const setDefaultAddress = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://127.0.0.1:8000/api/user/addresses/${id}/default`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.put(`${API_BASE_URL}/user/addresses/${id}/default`, {}, { headers: { Authorization: `Bearer ${token}` } });
       await fetchAddresses();
-      Swal.fire({ icon: 'success', title: 'Utama Diubah', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500});
+      Swal.fire({ icon: 'success', title: 'Utama Diubah', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
     } catch { Swal.fire('Gagal', 'Terjadi kesalahan', 'error'); }
   };
 
@@ -303,7 +304,7 @@ export default function EditProfilePage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.put('http://127.0.0.1:8000/api/user/profile', profile, { headers: { Authorization: `Bearer ${token}` } });
+      const response = await axios.put(`${API_BASE_URL}/user/profile`, profile, { headers: { Authorization: `Bearer ${token}` } });
       localStorage.setItem('user', JSON.stringify(response.data.user));
       Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Profil diperbarui', timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' });
     } catch (err) { Swal.fire('Gagal', err.response?.data?.message || 'Terjadi kesalahan. Coba username lain.', 'error'); }
@@ -317,10 +318,10 @@ export default function EditProfilePage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.put('http://127.0.0.1:8000/api/user/profile', { 
+      await axios.put(`${API_BASE_URL}/user/profile`, {
         current_password: passwordData.current_password,
-        password: passwordData.new_password, 
-        password_confirmation: passwordData.new_password_confirmation 
+        password: passwordData.new_password,
+        password_confirmation: passwordData.new_password_confirmation
       }, { headers: { Authorization: `Bearer ${token}` } });
       Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Password diubah', timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' });
       setPasswordData({ current_password: '', new_password: '', new_password_confirmation: '' });
@@ -361,9 +362,8 @@ export default function EditProfilePage() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium transition ${
-                        activeTab === tab.id ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
-                      }`}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium transition ${activeTab === tab.id ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+                        }`}
                     >
                       <tab.icon className="w-4 h-4" /> <span>{tab.label}</span>
                     </button>
@@ -374,27 +374,27 @@ export default function EditProfilePage() {
 
             {/* Area Konten Utama Tab */}
             <div className="flex-1">
-              
+
               {activeTab === 'profile' && (
-                <PersonalInfoForm 
-                  profile={profile} 
-                  handleProfileChange={handleProfileChange} 
-                  updateProfile={updateProfile} 
-                  loading={loading} 
+                <PersonalInfoForm
+                  profile={profile}
+                  handleProfileChange={handleProfileChange}
+                  updateProfile={updateProfile}
+                  loading={loading}
                 />
               )}
 
               {activeTab === 'security' && (
-                <SecurityForm 
-                  passwordData={passwordData} 
-                  handlePasswordChange={handlePasswordChange} 
-                  updatePassword={updatePassword} 
-                  loading={loading} 
+                <SecurityForm
+                  passwordData={passwordData}
+                  handlePasswordChange={handlePasswordChange}
+                  updatePassword={updatePassword}
+                  loading={loading}
                 />
               )}
 
               {activeTab === 'address' && (
-                <AddressFormTab 
+                <AddressFormTab
                   addresses={addresses} editingAddress={editingAddress} showAddressForm={showAddressForm} loading={loading}
                   openAddressForm={openAddressForm} editAddress={editAddress} deleteAddress={deleteAddress} setDefaultAddress={setDefaultAddress} saveAddress={saveAddress}
                   addressForm={addressForm} handleAddressChange={handleAddressChange} handleDetailAddressInput={handleDetailAddressInput}

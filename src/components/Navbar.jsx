@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config/api';
 import Swal from 'sweetalert2';
 
 import {
@@ -54,7 +55,7 @@ function NotificationIcon() {
       const token = localStorage.getItem('token');
       if (!token) return;
       try {
-        const response = await axios.get('http://127.0.0.1:8000/api/notifications', {
+        const response = await axios.get(`${API_BASE_URL}/notifications`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const unreadExists = response.data.notifications.some(
@@ -363,11 +364,11 @@ export default function Navbar() {
                   <p className="text-[10px] text-stone-400 uppercase tracking-widest font-medium">Masuk sebagai</p>
                   <p className="font-semibold text-stone-800 text-sm truncate">{user.name}</p>
                 </div>
-                
+
                 {[
                   { iconComponent: HiOutlineUser, label: 'Profil Saya', path: '/profile' },
                   { iconComponent: HiOutlineShoppingBag, label: 'Pesanan Saya', path: '/orders' },
-                  { iconComponent: HiOutlineHeart, label: 'Favorit Saya', path: '/wishlist' }, 
+                  { iconComponent: HiOutlineHeart, label: 'Favorit Saya', path: '/wishlist' },
                 ].map((item, idx) => {
                   const ItemIcon = item.iconComponent;
                   return (

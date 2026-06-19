@@ -3,11 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, Link, useParams } from 'react-router-dom';
-import { 
-  HiArrowLeft, 
-  HiCloudUpload, 
-  HiX, 
-  HiCheckCircle, 
+import { API_BASE_URL, getImageUrl } from '../../config/api';
+import {
+  HiArrowLeft,
+  HiCloudUpload,
+  HiX,
+  HiCheckCircle,
   HiPlus,
   HiTrash,
   HiOutlineInformationCircle,
@@ -30,16 +31,16 @@ export default function ProductEditAdmin() {
   const [formData, setFormData] = useState({
     name: '',
     category_id: '',
-    price: '', 
-    displayPrice: '', 
+    price: '',
+    displayPrice: '',
     stock: '',
     description: '',
     weight: '',
     dimensions: '',
     status: 'active',
     // ✅ Tambahan state diskon
-    discount_percent: '', 
-    discount_end_date: '' 
+    discount_percent: '',
+    discount_end_date: ''
   });
 
   const [image, setImage] = useState(null);
@@ -53,47 +54,47 @@ export default function ProductEditAdmin() {
   // ----------------------------------------
   useEffect(() => {
     const fetchProduct = async () => {
-        try {
-            const res = await axios.get(`http://127.0.0.1:8000/api/admin/products/${id}`);
-            const data = res.data;
-            
-            // Format datetime untuk input (YYYY-MM-DDThh:mm)
-            let formattedDate = '';
-            if(data.discount_end_date) {
-                const dateObj = new Date(data.discount_end_date);
-                // Menyesuaikan timezone lokal agar tampil benar di input
-                dateObj.setMinutes(dateObj.getMinutes() - dateObj.getTimezoneOffset());
-                formattedDate = dateObj.toISOString().slice(0, 16);
-            }
+      try {
+        const res = await axios.get(`${API_BASE_URL}/admin/products/${id}`);
+        const data = res.data;
 
-            setFormData({
-                name: data.name,
-                category_id: String(data.category_id),
-                price: data.price,
-                displayPrice: data.price ? Number(data.price).toLocaleString('id-ID') : '',
-                stock: data.stock,
-                description: data.description || '',
-                weight: data.weight || '',
-                dimensions: data.dimensions || '',
-                status: data.status || 'active',
-                discount_percent: data.discount_percent || '',
-                discount_end_date: formattedDate
-            });
-            
-            setPreview(data.image_url);
-            setExistingGalleries(data.galleries || []);
-            
-        } catch (error) {
-            console.error("❌ Gagal mengambil data produk:", error);
-            Swal.fire({
-              icon: 'error',
-              title: 'Gagal Memuat Data',
-              text: error.response?.data?.message || 'Tidak dapat mengambil data produk. Silakan coba lagi.'
-            });
-            navigate('/admin/products');
-        } finally {
-            setFetching(false);
+        // Format datetime untuk input (YYYY-MM-DDThh:mm)
+        let formattedDate = '';
+        if (data.discount_end_date) {
+          const dateObj = new Date(data.discount_end_date);
+          // Menyesuaikan timezone lokal agar tampil benar di input
+          dateObj.setMinutes(dateObj.getMinutes() - dateObj.getTimezoneOffset());
+          formattedDate = dateObj.toISOString().slice(0, 16);
         }
+
+        setFormData({
+          name: data.name,
+          category_id: String(data.category_id),
+          price: data.price,
+          displayPrice: data.price ? Number(data.price).toLocaleString('id-ID') : '',
+          stock: data.stock,
+          description: data.description || '',
+          weight: data.weight || '',
+          dimensions: data.dimensions || '',
+          status: data.status || 'active',
+          discount_percent: data.discount_percent || '',
+          discount_end_date: formattedDate
+        });
+
+        setPreview(getImageUrl(data.image_url));
+        setExistingGalleries(data.galleries || []);
+
+      } catch (error) {
+        console.error("❌ Gagal mengambil data produk:", error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Gagal Memuat Data',
+          text: error.response?.data?.message || 'Tidak dapat mengambil data produk. Silakan coba lagi.'
+        });
+        navigate('/admin/products');
+      } finally {
+        setFetching(false);
+      }
     };
 
     if (id) fetchProduct();
@@ -107,10 +108,10 @@ export default function ProductEditAdmin() {
     let rawValue = e.target.value;
     let numericValue = rawValue.replace(/[^0-9]/g, '');
     let displayValue = numericValue ? Number(numericValue).toLocaleString('id-ID') : '';
-    setFormData({ 
-        ...formData, 
-        price: numericValue, 
-        displayPrice: displayValue 
+    setFormData({
+      ...formData,
+      price: numericValue,
+      displayPrice: displayValue
     });
   };
 
@@ -133,21 +134,21 @@ export default function ProductEditAdmin() {
   };
 
   const handleGalleryChange = (e) => {
-      const files = Array.from(e.target.files);
-      const imageFiles = files.filter(file => file.type.startsWith('image/'));
-      const totalExisting = existingGalleries.length + newGalleryPreviews.length;
-      const spaceLeft = 4 - totalExisting;
+    const files = Array.from(e.target.files);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    const totalExisting = existingGalleries.length + newGalleryPreviews.length;
+    const spaceLeft = 4 - totalExisting;
 
-      if (imageFiles.length > spaceLeft) {
-        Swal.fire('Peringatan', `Anda hanya bisa menambahkan ${spaceLeft} foto lagi.`, 'warning');
-      }
+    if (imageFiles.length > spaceLeft) {
+      Swal.fire('Peringatan', `Anda hanya bisa menambahkan ${spaceLeft} foto lagi.`, 'warning');
+    }
 
-      const allowedFiles = imageFiles.slice(0, spaceLeft);
-      if (allowedFiles.length > 0) {
-          setNewGalleryImages(prev => [...prev, ...allowedFiles]);
-          const newPreviews = allowedFiles.map(file => URL.createObjectURL(file));
-          setNewGalleryPreviews(prev => [...prev, ...newPreviews]);
-      }
+    const allowedFiles = imageFiles.slice(0, spaceLeft);
+    if (allowedFiles.length > 0) {
+      setNewGalleryImages(prev => [...prev, ...allowedFiles]);
+      const newPreviews = allowedFiles.map(file => URL.createObjectURL(file));
+      setNewGalleryPreviews(prev => [...prev, ...newPreviews]);
+    }
   };
 
   const removeNewGalleryImage = (indexToRemove) => {
@@ -167,7 +168,7 @@ export default function ProductEditAdmin() {
 
     if (result.isConfirmed) {
       try {
-        await axios.delete(`http://127.0.0.1:8000/api/admin/products/gallery/${galleryId}`);
+        await axios.delete(`${API_BASE_URL}/admin/products/gallery/${galleryId}`);
         setExistingGalleries(prev => prev.filter(g => g.id !== galleryId));
       } catch (error) {
         Swal.fire('Gagal!', error.response?.data?.message || 'Gagal menghapus gambar', 'error');
@@ -178,28 +179,28 @@ export default function ProductEditAdmin() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     // ✅ Validasi logika diskon sederhana
     if (formData.discount_percent && !formData.discount_end_date) {
-        setLoading(false);
-        return Swal.fire('Perhatian', 'Batas waktu berakhir diskon harus diisi.', 'warning');
+      setLoading(false);
+      return Swal.fire('Perhatian', 'Batas waktu berakhir diskon harus diisi.', 'warning');
     }
     if (formData.discount_end_date && !formData.discount_percent) {
-        setLoading(false);
-        return Swal.fire('Perhatian', 'Masukkan persentase diskon (1-99).', 'warning');
+      setLoading(false);
+      return Swal.fire('Perhatian', 'Masukkan persentase diskon (1-99).', 'warning');
     }
 
     try {
       const data = new FormData();
       data.append('name', formData.name);
-      data.append('category_id', String(formData.category_id)); 
+      data.append('category_id', String(formData.category_id));
       data.append('price', formData.price);
       data.append('stock', formData.stock);
       data.append('description', formData.description);
       data.append('weight', formData.weight);
       data.append('dimensions', formData.dimensions);
       data.append('status', formData.status);
-      
+
       // Mengatasi kasus jika admin sengaja menghapus diskon (kosongkan)
       data.append('discount_percent', formData.discount_percent || '');
       data.append('discount_end_date', formData.discount_end_date || '');
@@ -207,16 +208,16 @@ export default function ProductEditAdmin() {
       data.append('_method', 'PUT');
 
       if (image) {
-          data.append('image', image);
+        data.append('image', image);
       }
 
       if (newGalleryImages.length > 0) {
-          newGalleryImages.forEach((file) => {
-              data.append('gallery[]', file);
-          });
+        newGalleryImages.forEach((file) => {
+          data.append('gallery[]', file);
+        });
       }
 
-      await axios.post(`http://127.0.0.1:8000/api/admin/products/${id}`, data, {
+      await axios.post(`${API_BASE_URL}/admin/products/${id}`, data, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
@@ -226,9 +227,9 @@ export default function ProductEditAdmin() {
         text: 'Produk berhasil diperbarui',
         timer: 2000
       }).then(() => {
-          navigate('/admin/products');
+        navigate('/admin/products');
       });
-      
+
     } catch (error) {
       Swal.fire({
         icon: 'error',
@@ -255,7 +256,7 @@ export default function ProductEditAdmin() {
     if (!formData.price || !formData.discount_percent) return null;
     const price = Number(formData.price);
     const disc = Number(formData.discount_percent);
-    if(disc <= 0 || disc >= 100) return null;
+    if (disc <= 0 || disc >= 100) return null;
     return price - (price * (disc / 100));
   };
   const discountedPrice = calculateDiscount();
@@ -271,10 +272,10 @@ export default function ProductEditAdmin() {
 
   return (
     <div className="max-w-5xl mx-auto pb-8 font-sans text-gray-900 animate-fadeIn">
-      
+
       <div className="flex items-center gap-4 mb-6">
-        <Link 
-          to="/admin/products" 
+        <Link
+          to="/admin/products"
           className="p-2 bg-white border border-gray-300 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
         >
           <HiArrowLeft className="w-5 h-5" />
@@ -286,12 +287,12 @@ export default function ProductEditAdmin() {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-6 items-start">
-        
+
         {/* ==============================
             LEFT COLUMN 
             ============================== */}
         <div className="flex-1 w-full space-y-6">
-          
+
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200 bg-gray-50/50">
               <h2 className="text-base font-semibold text-gray-800 flex items-center gap-2">
@@ -304,12 +305,12 @@ export default function ProductEditAdmin() {
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Nama Produk <span className="text-red-500">*</span>
                 </label>
-                <input 
-                  type="text" 
-                  name="name" 
-                  required 
+                <input
+                  type="text"
+                  name="name"
+                  required
                   className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-colors"
-                  onChange={handleChange} 
+                  onChange={handleChange}
                   value={formData.name}
                 />
               </div>
@@ -317,11 +318,11 @@ export default function ProductEditAdmin() {
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Deskripsi Produk
                 </label>
-                <textarea 
-                  name="description" 
-                  rows="4" 
+                <textarea
+                  name="description"
+                  rows="4"
                   className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-colors resize-y"
-                  onChange={handleChange} 
+                  onChange={handleChange}
                   value={formData.description}
                 />
               </div>
@@ -336,7 +337,7 @@ export default function ProductEditAdmin() {
               </h2>
             </div>
             <div className="p-5 space-y-6">
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Foto Utama <span className="text-red-500">*</span>
@@ -353,9 +354,8 @@ export default function ProductEditAdmin() {
                   </div>
                 ) : (
                   <label
-                    className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 cursor-pointer transition-colors w-full sm:w-64 h-48 ${
-                      dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400'
-                    }`}
+                    className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 cursor-pointer transition-colors w-full sm:w-64 h-48 ${dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400'
+                      }`}
                     onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                     onDragLeave={() => setDragOver(false)}
                     onDrop={handleDrop}
@@ -374,7 +374,7 @@ export default function ProductEditAdmin() {
                 <div className="flex flex-wrap gap-3">
                   {existingGalleries.map((gal) => (
                     <div key={gal.id} className="relative w-24 h-24 rounded-lg border border-gray-200 overflow-hidden group">
-                      <img src={gal.image_url} alt="Gallery" className="w-full h-full object-cover" />
+                      <img src={getImageUrl(gal.image_url)} alt="Gallery" className="w-full h-full object-cover" />
                       <button type="button" onClick={() => removeExistingGallery(gal.id)} className="absolute top-1 right-1 bg-white/90 text-red-600 rounded-md p-1 opacity-0 group-hover:opacity-100">
                         <HiTrash className="w-3.5 h-3.5" />
                       </button>
@@ -415,11 +415,11 @@ export default function ProductEditAdmin() {
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">Rp</span>
-                    <input 
-                      type="text" 
-                      required 
+                    <input
+                      type="text"
+                      required
                       className={`w-full pl-9 pr-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-colors ${discountedPrice ? 'text-gray-400 line-through' : 'text-gray-900'}`}
-                      onChange={handlePriceChange} 
+                      onChange={handlePriceChange}
                       value={formData.displayPrice}
                     />
                   </div>
@@ -428,13 +428,13 @@ export default function ProductEditAdmin() {
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Stok <span className="text-red-500">*</span>
                   </label>
-                  <input 
-                    type="number" 
-                    name="stock" 
-                    required 
+                  <input
+                    type="number"
+                    name="stock"
+                    required
                     className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-colors"
-                    onChange={handleChange} 
-                    value={formData.stock} 
+                    onChange={handleChange}
+                    value={formData.stock}
                     min="0"
                   />
                 </div>
@@ -443,7 +443,7 @@ export default function ProductEditAdmin() {
               {/* ✅ BAGIAN DISKON (BARU) */}
               <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-lg">
                 <h3 className="text-sm font-semibold text-blue-800 flex items-center gap-2 mb-4">
-                   <HiOutlineTicket className="w-4 h-4" /> Atur Diskon (Opsional)
+                  <HiOutlineTicket className="w-4 h-4" /> Atur Diskon (Opsional)
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -451,45 +451,45 @@ export default function ProductEditAdmin() {
                       Potongan Harga (%)
                     </label>
                     <div className="relative">
-                        <input 
-                          type="number" 
-                          name="discount_percent" 
-                          className="w-full pl-3 pr-8 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                          onChange={handleChange} 
-                          value={formData.discount_percent} 
-                          min="1" max="99"
-                          placeholder="Misal: 15"
-                        />
-                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm font-medium">%</span>
+                      <input
+                        type="number"
+                        name="discount_percent"
+                        className="w-full pl-3 pr-8 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        onChange={handleChange}
+                        value={formData.discount_percent}
+                        min="1" max="99"
+                        placeholder="Misal: 15"
+                      />
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm font-medium">%</span>
                     </div>
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">
                       Berlaku Sampai
                     </label>
-                    <input 
-                      type="datetime-local" 
-                      name="discount_end_date" 
+                    <input
+                      type="datetime-local"
+                      name="discount_end_date"
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                      onChange={handleChange} 
-                      value={formData.discount_end_date} 
+                      onChange={handleChange}
+                      value={formData.discount_end_date}
                       min={new Date().toISOString().slice(0, 16)}
                     />
                   </div>
                 </div>
-                
+
                 {/* Preview Harga Diskon Realtime */}
                 {discountedPrice && (
-                    <div className="mt-4 pt-3 border-t border-blue-200/60 flex justify-between items-center">
-                        <span className="text-xs text-blue-600 font-medium">Harga setelah diskon:</span>
-                        <span className="text-lg font-bold text-red-600">Rp {discountedPrice.toLocaleString('id-ID')}</span>
-                    </div>
+                  <div className="mt-4 pt-3 border-t border-blue-200/60 flex justify-between items-center">
+                    <span className="text-xs text-blue-600 font-medium">Harga setelah diskon:</span>
+                    <span className="text-lg font-bold text-red-600">Rp {discountedPrice.toLocaleString('id-ID')}</span>
+                  </div>
                 )}
                 {/* Notifikasi jika admin ingin menghapus diskon */}
                 {formData.discount_percent && formData.discount_end_date && (
-                    <p className="text-[10px] text-gray-500 mt-3 text-center">
-                        Kosongkan kedua kolom di atas jika ingin menonaktifkan diskon.
-                    </p>
+                  <p className="text-[10px] text-gray-500 mt-3 text-center">
+                    Kosongkan kedua kolom di atas jika ingin menonaktifkan diskon.
+                  </p>
                 )}
               </div>
             </div>
@@ -509,11 +509,11 @@ export default function ProductEditAdmin() {
                   Berat (Gram)
                 </label>
                 <div className="relative">
-                  <input 
-                    type="number" 
-                    name="weight" 
+                  <input
+                    type="number"
+                    name="weight"
                     className="w-full pl-3 pr-10 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-colors"
-                    onChange={handleChange} 
+                    onChange={handleChange}
                     value={formData.weight}
                   />
                   <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs">g</span>
@@ -523,24 +523,24 @@ export default function ProductEditAdmin() {
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Dimensi PxLxT (Opsional)
                 </label>
-                <input 
-                  type="text" 
-                  name="dimensions" 
+                <input
+                  type="text"
+                  name="dimensions"
                   className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-colors"
-                  onChange={handleChange} 
+                  onChange={handleChange}
                   value={formData.dimensions}
                 />
               </div>
             </div>
           </div>
-          
+
         </div>
 
         {/* ==============================
             RIGHT COLUMN
             ============================== */}
         <div className="w-full lg:w-80 space-y-6 lg:sticky lg:top-6">
-          
+
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
             <h2 className="text-sm font-semibold text-gray-900 mb-4">Aksi</h2>
             <button
@@ -578,7 +578,7 @@ export default function ProductEditAdmin() {
                 </div>
                 <input type="radio" name="status" value="active" checked={formData.status === 'active'} onChange={handleChange} className="hidden" />
               </label>
-              
+
               <label className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${formData.status === 'inactive' ? 'border-gray-500 bg-gray-100' : 'border-gray-200 hover:bg-gray-50'}`}>
                 <div className="flex items-center gap-3">
                   <span className={`w-2.5 h-2.5 rounded-full ${formData.status === 'inactive' ? 'bg-gray-600' : 'bg-gray-300'}`}></span>
@@ -602,11 +602,10 @@ export default function ProductEditAdmin() {
                   key={cat.id}
                   type="button"
                   onClick={() => setFormData({ ...formData, category_id: String(cat.id) })}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors text-sm ${
-                    formData.category_id === String(cat.id)
-                      ? 'bg-blue-50 text-blue-700 font-medium'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors text-sm ${formData.category_id === String(cat.id)
+                    ? 'bg-blue-50 text-blue-700 font-medium'
+                    : 'text-gray-600 hover:bg-gray-50'
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-lg grayscale opacity-70">{cat.icon}</span>

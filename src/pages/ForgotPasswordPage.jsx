@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API_BASE_URL } from "../config/api";
 import Swal from "sweetalert2";
-import { 
-  HiOutlineEnvelope, 
-  HiOutlineLockClosed, 
+import {
+  HiOutlineEnvelope,
+  HiOutlineLockClosed,
   HiArrowLeft,
   HiOutlineEye,
   HiOutlineEyeSlash
@@ -13,7 +14,7 @@ import {
 export default function ForgotPasswordPage() {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
-  
+
   // STATE OTP 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [filledIdx, setFilledIdx] = useState(null);
@@ -22,7 +23,7 @@ export default function ForgotPasswordPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // STATE SHOW/HIDE PASSWORD
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -30,7 +31,7 @@ export default function ForgotPasswordPage() {
   // STATE BARU UNTUK KIRIM ULANG OTP & TIMER
   const [isResending, setIsResending] = useState(false);
   const [countdown, setCountdown] = useState(60);
-  
+
   const navigate = useNavigate();
 
   // EFEK UNTUK MENGHITUNG MUNDUR TIMER
@@ -82,7 +83,7 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await axios.post("http://127.0.0.1:8000/api/forgot-password/send-otp", { email });
+      await axios.post(`${API_BASE_URL}/forgot-password/send-otp`, { email });
       Swal.fire({
         icon: "success",
         title: "OTP Terkirim!",
@@ -100,7 +101,7 @@ export default function ForgotPasswordPage() {
         icon: "error",
         title: "Gagal",
         text: error.response?.data?.message || "Email tidak ditemukan.",
-        confirmButtonColor: "#0f172a", 
+        confirmButtonColor: "#0f172a",
       });
     } finally {
       setIsLoading(false);
@@ -114,7 +115,7 @@ export default function ForgotPasswordPage() {
 
     setIsLoading(true);
     try {
-      await axios.post("http://127.0.0.1:8000/api/forgot-password/verify-otp", { email, otp: otpCode });
+      await axios.post(`${API_BASE_URL}/forgot-password/verify-otp`, { email, otp: otpCode });
       setStep(3);
     } catch (error) {
       Swal.fire({
@@ -135,8 +136,8 @@ export default function ForgotPasswordPage() {
     setIsResending(true);
     try {
       // Menggunakan endpoint send-otp karena pada forgot password endpoint ini men-generate OTP baru
-      await axios.post("http://127.0.0.1:8000/api/forgot-password/send-otp", { email });
-      
+      await axios.post(`${API_BASE_URL}/forgot-password/send-otp`, { email });
+
       Swal.fire({
         html: `
           <div class="flex flex-col items-center">
@@ -186,15 +187,15 @@ export default function ForgotPasswordPage() {
       Swal.fire({ icon: "error", title: "Peringatan", text: "Konfirmasi password tidak cocok.", confirmButtonColor: "#0f172a" });
       return;
     }
-    
+
     setIsLoading(true);
     const otpCode = otp.join("");
-    
+
     try {
-      await axios.post("http://127.0.0.1:8000/api/forgot-password/reset", { 
-        email, 
-        otp: otpCode, 
-        password: newPassword 
+      await axios.post(`${API_BASE_URL}/forgot-password/reset`, {
+        email,
+        otp: otpCode,
+        password: newPassword
       });
       Swal.fire({
         icon: "success",
@@ -219,7 +220,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-md">
         {/* Card dengan efek glassmorphism halus */}
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/50 transition-all duration-300">
-          
+
           {/* Branding */}
           <div className="flex flex-col items-center mb-8">
             <div className="flex items-end gap-[3px] h-8 mb-3">
@@ -252,7 +253,7 @@ export default function ForgotPasswordPage() {
               {step === 2 && "Verifikasi Kode OTP"}
               {step === 3 && "Buat Password Baru"}
             </h2>
-            
+
             {step === 1 && (
               <p className="text-sm text-slate-500 mt-1 px-4">
                 Kami akan mengirimkan kode pemulihan ke email Anda
@@ -267,8 +268,8 @@ export default function ForgotPasswordPage() {
                   <span className="text-sm font-semibold text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-100">
                     {email}
                   </span>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => { setStep(1); setOtp(["", "", "", "", "", ""]); }}
                     className="text-sm text-amber-600 hover:text-amber-700 font-bold underline decoration-2 underline-offset-4 transition-colors"
                   >
@@ -371,11 +372,10 @@ export default function ForgotPasswordPage() {
                   type="button"
                   onClick={handleResend}
                   disabled={countdown > 0 || isResending}
-                  className={`font-bold transition-colors ml-1 ${
-                    countdown > 0 
-                      ? "text-slate-400 cursor-not-allowed" 
+                  className={`font-bold transition-colors ml-1 ${countdown > 0
+                      ? "text-slate-400 cursor-not-allowed"
                       : "text-slate-900 hover:text-amber-600 underline decoration-2 underline-offset-4"
-                  }`}
+                    }`}
                 >
                   {isResending ? "Mengirim..." : countdown > 0 ? `Kirim ulang dalam ${countdown}s` : "Kirim Ulang"}
                 </button>
