@@ -566,32 +566,6 @@ export default function ProductEditAdmin() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200 bg-gray-50/50">
               <h2 className="text-base font-semibold text-gray-800 flex items-center gap-2">
-                <HiEye className="w-5 h-5 text-gray-500" />
-                Status Produk
-              </h2>
-            </div>
-            <div className="p-4 flex flex-col gap-3">
-              <label className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${formData.status === 'active' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50'}`}>
-                <div className="flex items-center gap-3">
-                  <span className={`w-2.5 h-2.5 rounded-full ${formData.status === 'active' ? 'bg-blue-600' : 'bg-gray-300'}`}></span>
-                  <span className={`text-sm font-medium ${formData.status === 'active' ? 'text-blue-700' : 'text-gray-700'}`}>Aktif</span>
-                </div>
-                <input type="radio" name="status" value="active" checked={formData.status === 'active'} onChange={handleChange} className="hidden" />
-              </label>
-
-              <label className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${formData.status === 'inactive' ? 'border-gray-500 bg-gray-100' : 'border-gray-200 hover:bg-gray-50'}`}>
-                <div className="flex items-center gap-3">
-                  <span className={`w-2.5 h-2.5 rounded-full ${formData.status === 'inactive' ? 'bg-gray-600' : 'bg-gray-300'}`}></span>
-                  <span className={`text-sm font-medium ${formData.status === 'inactive' ? 'text-gray-800' : 'text-gray-700'}`}>Nonaktif</span>
-                </div>
-                <input type="radio" name="status" value="inactive" checked={formData.status === 'inactive'} onChange={handleChange} className="hidden" />
-              </label>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-200 bg-gray-50/50">
-              <h2 className="text-base font-semibold text-gray-800 flex items-center gap-2">
                 <HiOutlineTag className="w-5 h-5 text-gray-500" />
                 Kategori
               </h2>

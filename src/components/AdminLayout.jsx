@@ -13,7 +13,8 @@ import {
   HiOutlineExternalLink,
   HiOutlineMenuAlt2,
   HiOutlineChevronDown,
-  HiOutlineChartPie
+  HiOutlineChartPie,
+  HiX // Icon silang untuk menutup menu di mobile
 } from 'react-icons/hi';
 
 export default function AdminLayout() {
@@ -21,9 +22,19 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   
+  // State untuk mengontrol sidebar di Desktop (collapsed/expanded)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  
+  // State BARU untuk mengontrol sidebar di Mobile (terbuka/tertutup)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
   const [hasUnreadNotif, setHasUnreadNotif] = useState(false); 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+
+  // Menutup menu mobile otomatis setiap kali pindah halaman
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     const fetchGlobalNotificationStatus = async () => {
@@ -35,8 +46,15 @@ export default function AdminLayout() {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        const hasUnread = res.data.some(n => n.is_read == 0 || n.is_read === false || n.is_read === '0');
-        setHasUnreadNotif(hasUnread);
+        // Memperbaiki potensi error TypeError: res.data.some is not a function
+        const notifArray = res.data.data || res.data.notifications || res.data;
+        if (Array.isArray(notifArray)) {
+           const hasUnread = notifArray.some(n => n.is_read == 0 || n.is_read === false || n.is_read === '0');
+           setHasUnreadNotif(hasUnread);
+        } else {
+           setHasUnreadNotif(false); 
+        }
+
       } catch (error) {
         console.error("Gagal sinkronisasi titik notifikasi:", error);
       }
@@ -60,30 +78,50 @@ export default function AdminLayout() {
     navigate('/login');
   };
 
-  const toggleSidebar = () => {
+  const toggleSidebarDesktop = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans text-gray-900">
+    <div className="flex h-screen bg-gray-50 font-sans text-gray-900 overflow-hidden relative">
       
       {/* ==============================
-                SIDEBAR
+          MOBILE OVERLAY (Layar Gelap)
+         ============================== */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden backdrop-blur-sm transition-opacity"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* ==============================
+                   SIDEBAR
          ============================== */}
       <aside 
-        className={`${
-          isSidebarCollapsed ? 'w-20' : 'w-64'
-        } bg-slate-900 text-slate-300 flex flex-col z-20 flex-shrink-0 transition-all duration-300 ease-in-out border-r border-slate-800`}
+        className={`
+          fixed lg:static inset-y-0 left-0 z-50 flex flex-col flex-shrink-0 bg-slate-900 text-slate-300 border-r border-slate-800 transition-all duration-300 ease-in-out
+          ${isSidebarCollapsed ? 'lg:w-20' : 'w-64'}
+          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}
       >
-        {/* Brand Logo */}
-        <div className="h-16 flex items-center justify-center border-b border-slate-800">
+        {/* Brand Logo & Tombol Close (Mobile) */}
+        <div className="h-16 flex items-center justify-between lg:justify-center px-4 lg:px-0 border-b border-slate-800">
           {!isSidebarCollapsed ? (
             <span className="font-bold text-xl tracking-tight text-white">
               Khairul<span className="text-amber-500">Audio</span>
             </span>
           ) : (
-            <span className="font-bold text-xl text-amber-500">K<span className="text-white">A</span></span>
+            <span className="font-bold text-xl text-amber-500 hidden lg:block">K<span className="text-white">A</span></span>
           )}
+          
+          {/* Tombol Tutup Sidebar (Hanya terlihat di Mobile saat menu terbuka) */}
+          <button 
+            onClick={() => setIsMobileMenuOpen(false)} 
+            className="lg:hidden text-slate-400 hover:text-white"
+          >
+            <HiX className="w-6 h-6" />
+          </button>
         </div>
 
         {/* Menu List */}
@@ -96,7 +134,6 @@ export default function AdminLayout() {
           <NavLink to="/admin/products" icon={<HiOutlineCube />} label="Produk" active={location.pathname === '/admin/products'} collapsed={isSidebarCollapsed} />
           <NavLink to="/admin/orders" icon={<HiOutlineClipboardList />} label="Pesanan" active={location.pathname === '/admin/orders'} collapsed={isSidebarCollapsed} />
           
-          {/* ✅ Profil Saya dipindah ke sini, Pengaturan dihapus */}
           <MenuLabel label="Akun" collapsed={isSidebarCollapsed} />
           <NavLink to="/admin/profile" icon={<HiOutlineUserCircle />} label="Profil Saya" active={location.pathname === '/admin/profile'} collapsed={isSidebarCollapsed} />
         
@@ -106,29 +143,39 @@ export default function AdminLayout() {
       {/* ==============================
          MAIN CONTENT AREA
          ============================== */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         
-        {/* TOP NAVBAR - CLASSIC MODERN */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 z-10">
+        {/* TOP NAVBAR */}
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 z-10 sticky top-0">
            
            {/* Left Side: Toggle & Title */}
            <div className="flex items-center gap-4">
+             {/* Tombol Toggle Desktop (Tersembunyi di Mobile) */}
              <button
-               onClick={toggleSidebar}
-               className="p-2 text-gray-500 hover:text-blue-600 hover:bg-gray-100 rounded-lg transition-colors"
+               onClick={toggleSidebarDesktop}
+               className="p-2 text-gray-500 hover:text-blue-600 hover:bg-gray-100 rounded-lg transition-colors hidden lg:block"
                title="Toggle Sidebar"
              >
                <HiOutlineMenuAlt2 className="w-5 h-5" />
              </button>
-             <h1 className="text-lg font-semibold text-gray-800 hidden sm:block">
+             
+             {/* Tombol Toggle Mobile (Tersembunyi di Desktop) */}
+             <button
+               onClick={() => setIsMobileMenuOpen(true)}
+               className="p-2 -ml-2 text-gray-500 hover:text-blue-600 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
+               title="Buka Menu"
+             >
+               <HiOutlineMenuAlt2 className="w-6 h-6" />
+             </button>
+
+             <h1 className="text-lg font-semibold text-gray-800 line-clamp-1">
                {getPageTitle(location.pathname)}
              </h1>
            </div>
 
            {/* Right Side Actions */}
-           <div className="flex items-center gap-3 sm:gap-5">
+           <div className="flex items-center gap-3 sm:gap-5 flex-shrink-0">
 
-             {/* View Store Button */}
              <Link 
                to="/" 
                target="_blank" 
@@ -138,7 +185,6 @@ export default function AdminLayout() {
                Lihat Toko
              </Link>
 
-             {/* Notification Button */}
              <button 
                onClick={() => navigate('/admin/notifications')}
                className="relative p-2 text-gray-500 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-colors"
@@ -150,7 +196,6 @@ export default function AdminLayout() {
                )}
              </button>
 
-             {/* Divider */}
              <div className="h-6 w-px bg-gray-300 hidden sm:block"></div>
 
              {/* User Menu */}
@@ -170,7 +215,6 @@ export default function AdminLayout() {
                  <HiOutlineChevronDown className="w-4 h-4 text-gray-400 hidden md:block" />
                </button>
 
-               {/* Dropdown Menu - ✅ Hanya berisi Logout */}
                {isUserMenuOpen && (
                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50">
                    <div className="px-4 py-2 border-b border-gray-100 md:hidden">
@@ -191,7 +235,7 @@ export default function AdminLayout() {
         </header>
 
         {/* DASHBOARD CONTENT */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8 bg-gray-50">
            <div className="max-w-7xl mx-auto">
               <Outlet context={{ setHasUnreadNotif }} />
            </div>
@@ -199,7 +243,6 @@ export default function AdminLayout() {
 
       </div>
 
-      {/* Minimal Scrollbar Styles */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 5px;
@@ -240,7 +283,7 @@ function getPageTitle(pathname) {
 
 function MenuLabel({ label, collapsed }) {
   if (collapsed) {
-    return <div className="h-4"></div>; 
+    return <div className="h-4 hidden lg:block"></div>; 
   }
   
   return (
@@ -260,15 +303,19 @@ function NavLink({ to, icon, label, active, badge, collapsed }) {
           ? 'bg-slate-800 text-white border-l-4 border-blue-500' 
           : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border-l-4 border-transparent'
         }
-        ${collapsed ? 'px-0 justify-center' : 'px-5'}
+        ${collapsed ? 'lg:px-0 lg:justify-center px-5' : 'px-5'}
       `}
       title={collapsed ? label : ''}
     >
-      <div className={`flex items-center gap-3 ${collapsed ? 'justify-center w-full' : ''}`}>
+      <div className={`flex items-center gap-3 ${collapsed ? 'lg:justify-center lg:w-full' : ''}`}>
         <span className={`text-lg ${active ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'}`}>
           {icon}
         </span>
-        {!collapsed && <span>{label}</span>}
+        
+        {/* Teks label selalu muncul di HP, tapi bisa tersembunyi di Desktop jika collapsed */}
+        <span className={collapsed ? 'lg:hidden block' : 'block'}>
+          {label}
+        </span>
       </div>
       
       {!collapsed && badge && (
@@ -277,9 +324,9 @@ function NavLink({ to, icon, label, active, badge, collapsed }) {
         </span>
       )}
 
-      {/* Tooltip for collapsed mode */}
+      {/* Tooltip for collapsed mode (Hanya tampil di Desktop) */}
       {collapsed && (
-        <div className="absolute left-full ml-3 px-2.5 py-1.5 bg-gray-800 text-white text-xs font-medium rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-md">
+        <div className="hidden lg:block absolute left-full ml-3 px-2.5 py-1.5 bg-gray-800 text-white text-xs font-medium rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-md">
           {label}
         </div>
       )}
