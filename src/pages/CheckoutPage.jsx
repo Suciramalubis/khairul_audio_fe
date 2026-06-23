@@ -1,3 +1,5 @@
+// Lokasi: src/pages/CheckoutPage.jsx
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
@@ -11,7 +13,7 @@ import {
 import Swal from "sweetalert2";
 import { API_BASE_URL, getImageUrl } from "../config/api";
 
-// --- FUNGSI HELPER CEK DISKON ---
+// --- FUNGSI HELPER CEK DISKON (PRODUK) ---
 const getPriceInfo = (product) => {
   if (!product) return { hasDiscount: false, price: 0, originalPrice: 0 };
   const originalPrice = Number(product.price || product.harga || 0);
@@ -41,7 +43,11 @@ export default function CheckoutPage() {
   const { removeFromCart } = useCart() || {};
 
   const [checkoutItems, setCheckoutItems] = useState([]);
+  
+  // === STATE UNTUK KODE PROMO ===
+  const [promoCode, setPromoCode] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState(0);
+  
   const [loading, setLoading] = useState(false);
   const [calculatingOngkir, setCalculatingOngkir] = useState(false);
 
@@ -85,7 +91,14 @@ export default function CheckoutPage() {
         const parsedData = JSON.parse(cartData);
         if (parsedData.items) {
           setCheckoutItems(parsedData.items);
-          setAppliedDiscount(parsedData.appliedDiscount || 0);
+          
+          // Memeriksa apakah user sudah memasukkan diskon dari halaman Cart
+          if (parsedData.appliedDiscount && parsedData.appliedDiscount > 0) {
+            setAppliedDiscount(parsedData.appliedDiscount);
+            setPromoCode("WELCOME10"); // Menampilkan kode statis agar user tahu
+          } else {
+            setAppliedDiscount(0);
+          }
         } else {
           setCheckoutItems(parsedData);
           setAppliedDiscount(0);
@@ -107,6 +120,7 @@ export default function CheckoutPage() {
   }, 0);
 
   const subTotal = subTotalKotor - appliedDiscount;
+  
   const totalWeight = checkoutItems.reduce((total, item) => {
     const actualProduct = item.product || item.produk || item;
     const berat = Number(actualProduct.weight || actualProduct.berat || actualProduct.berat_produk || 1000);
@@ -134,6 +148,23 @@ export default function CheckoutPage() {
     { id: "VA_MANDIRI", name: "Bank Mandiri (Mandiri)" },
     { id: "VA_BSI", name: "Bank Syariah Indonesia (BSI)" }
   ];
+
+  // === FUNGSI APLIKASIKAN KODE PROMO (Di Halaman Checkout) ===
+  const handleApplyPromo = () => {
+    const code = promoCode.toUpperCase().trim();
+    if (!code) {
+      Swal.fire({ icon: "info", title: "Kode Kosong", text: "Silakan masukkan kode promo Anda." });
+      return;
+    }
+
+    if (code === "WELCOME10") {
+      setAppliedDiscount(subTotalKotor * 0.1); // Diskon 10% dari Subtotal
+      Swal.fire({ icon: "success", title: "Berhasil!", text: "Diskon 10% diterapkan pada pesanan Anda.", timer: 1500, showConfirmButton: false });
+    } else {
+      setAppliedDiscount(0);
+      Swal.fire({ icon: "error", title: "Tidak Valid", text: "Kode promo tidak ditemukan atau sudah kadaluarsa.", confirmButtonColor: "#ef4444" });
+    }
+  };
 
   const toggleAddressMode = (isSavedMode) => {
     setUseSavedAddress(isSavedMode);
@@ -413,12 +444,13 @@ export default function CheckoutPage() {
       const token = localStorage.getItem("token");
       const postalCodeString = addressForm.postal_code ? ` (Kode Pos: ${addressForm.postal_code})` : '';
       const fullAddress = `${name} | ${phone} | ${destinationName} | ${addressDetail}${postalCodeString}`;
+      
       const orderData = {
         shipping_address: fullAddress,
         shipping_courier: selectedShipping.courier,
         shipping_service: selectedShipping.service,
         shipping_cost: selectedShipping.cost,
-        total_price: subTotal + selectedShipping.cost,
+        total_price: subTotal + selectedShipping.cost, // Menggunakan subTotal yang sudah dipotong diskon promo
         payment_method: selectedPayment,
         items: checkoutItems.map(item => {
           const actualProduct = item.product || item.produk || item;
@@ -430,9 +462,11 @@ export default function CheckoutPage() {
           };
         })
       };
+      
       const response = await axios.post(`${API_BASE_URL}/user/orders/checkout`, orderData, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
       if (response.data) {
         Swal.fire({
           icon: "success",
@@ -760,7 +794,28 @@ export default function CheckoutPage() {
             <div className="lg:col-span-5 space-y-6">
               <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-6 sticky top-24">
                 <h2 className="text-lg font-bold text-slate-800 mb-5">Ringkasan Belanja</h2>
-                <div className="space-y-3 text-sm text-slate-600">
+                
+                {/* === KOLOM INPUT PROMO BARU === */}
+                <div className="mb-5">
+                  <p className="text-[12px] font-semibold text-slate-700 mb-2">Makin hemat pakai promo</p>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={promoCode} 
+                      onChange={(e) => setPromoCode(e.target.value)} 
+                      placeholder="Masukkan Kode..." 
+                      className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded focus:outline-none focus:border-blue-500 text-[13px] font-medium uppercase transition-colors" 
+                    />
+                    <button 
+                      onClick={handleApplyPromo} 
+                      className="px-4 py-2 bg-slate-900 text-white text-[13px] font-bold rounded hover:bg-slate-800 transition-colors"
+                    >
+                      Terapkan
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-3 text-sm text-slate-600 border-t border-slate-100 pt-4">
                   <div className="flex justify-between">
                     <span>Total Harga Produk</span>
                     <span>Rp {new Intl.NumberFormat("id-ID").format(subTotalKotor)}</span>

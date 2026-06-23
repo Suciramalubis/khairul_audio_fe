@@ -21,7 +21,6 @@ export default function DashboardAdmin() {
   const [lowStockList, setLowStockList] = useState([]);
   const [lowStockCount, setLowStockCount] = useState(0);
 
-  // State untuk Data Pesanan Asli
   const [orders, setOrders] = useState([]);
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [totalRevenue, setTotalRevenue] = useState(0);
@@ -32,6 +31,10 @@ export default function DashboardAdmin() {
   const [chartMode, setChartMode] = useState("minggu");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [chartData, setChartData] = useState([]);
+  const [chartMaxVal, setChartMaxVal] = useState(1000000); 
+
+  // --- TOOLTIP STATE (Mengikuti Kursor) ---
+  const [tooltip, setTooltip] = useState({ show: false, x: 0, y: 0, value: 0 });
 
   const YEAR_OPTIONS = [
     new Date().getFullYear(),
@@ -42,7 +45,6 @@ export default function DashboardAdmin() {
   const BULAN_LABELS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
   const HARI_LABELS = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 
-  // Helper untuk ambil token
   const getToken = () => localStorage.getItem("admin_token") || localStorage.getItem("token");
 
   useEffect(() => {
@@ -63,7 +65,6 @@ export default function DashboardAdmin() {
     const config = { headers: { Authorization: `Bearer ${token}` } };
 
     try {
-      // 1. Mengambil data Produk
       try {
         const resProducts = await axios.get(`${API_BASE_URL}/admin/products`, config);
         const allProducts = resProducts.data;
@@ -75,17 +76,14 @@ export default function DashboardAdmin() {
         console.warn("Gagal load produk:", err);
       }
 
-      // 2. Mengambil data Pesanan
       try {
         const resOrders = await axios.get(`${API_BASE_URL}/admin/orders`, config);
         const allOrders = resOrders.data.data ? resOrders.data.data : resOrders.data;
         setOrders(allOrders);
 
-        // Hitung pesanan pending
         const pending = allOrders.filter(o => o.status === 'pending');
         setPendingOrdersCount(pending.length);
 
-        // Hitung total pendapatan (Hanya yang proses, dikirim, dan selesai)
         const validOrders = allOrders.filter(o => ['processing', 'shipped', 'completed'].includes(o.status));
         const total = validOrders.reduce((sum, o) => sum + Number(o.total_price || o.total || 0), 0);
         setTotalRevenue(total);
@@ -105,6 +103,7 @@ export default function DashboardAdmin() {
     const validOrders = orders.filter(o => ['processing', 'shipped', 'completed'].includes(o.status));
     let newData = [];
     const now = new Date();
+    let currentMaxVal = 0;
 
     if (chartMode === "minggu") {
       const currentDay = now.getDay() === 0 ? 7 : now.getDay();
@@ -131,13 +130,14 @@ export default function DashboardAdmin() {
         }
       });
 
-      const maxVal = Math.max(...weekTotals, 1);
-      const todayIdx = now.getDay() === 0 ? 6 : now.getDay() - 1;
+      currentMaxVal = Math.max(...weekTotals, 0);
+      const refMax = currentMaxVal > 0 ? currentMaxVal : 1; 
 
       newData = weekTotals.map((val, idx) => ({
         label: HARI_LABELS[idx],
-        height: Math.round((val / maxVal) * 90) + 5,
-        active: idx === todayIdx,
+        height: Math.round((val / refMax) * 100), 
+        // Logika baru: Aktif jika nilainya sama dengan nilai tertinggi (dan bukan 0)
+        active: val === currentMaxVal && val > 0,
         value: val
       }));
 
@@ -157,14 +157,14 @@ export default function DashboardAdmin() {
         }
       });
 
-      const maxVal = Math.max(...monthTotals, 1);
-      const todayDate = now.getDate();
-      const isCurrentYearAndMonth = selectedYear === now.getFullYear();
+      currentMaxVal = Math.max(...monthTotals, 0);
+      const refMax = currentMaxVal > 0 ? currentMaxVal : 1;
 
       newData = monthTotals.map((val, idx) => ({
         label: `${idx + 1}`,
-        height: Math.round((val / maxVal) * 90) + 5,
-        active: (idx + 1) === todayDate && isCurrentYearAndMonth,
+        height: Math.round((val / refMax) * 100),
+        // Logika baru: Aktif jika nilainya sama dengan nilai tertinggi (dan bukan 0)
+        active: val === currentMaxVal && val > 0,
         value: val
       }));
 
@@ -182,18 +182,19 @@ export default function DashboardAdmin() {
         }
       });
 
-      const maxVal = Math.max(...yearTotals, 1);
-      const curMonth = now.getMonth();
-      const isCurrentYear = selectedYear === now.getFullYear();
+      currentMaxVal = Math.max(...yearTotals, 0);
+      const refMax = currentMaxVal > 0 ? currentMaxVal : 1;
 
       newData = yearTotals.map((val, idx) => ({
         label: BULAN_LABELS[idx],
-        height: Math.round((val / maxVal) * 90) + 5,
-        active: idx === curMonth && isCurrentYear,
+        height: Math.round((val / refMax) * 100),
+        // Logika baru: Aktif jika nilainya sama dengan nilai tertinggi (dan bukan 0)
+        active: val === currentMaxVal && val > 0,
         value: val
       }));
     }
 
+    setChartMaxVal(currentMaxVal > 0 ? currentMaxVal : 1000000);
     setChartData(newData);
   };
 
@@ -205,18 +206,68 @@ export default function DashboardAdmin() {
 
   const validRecentOrders = orders.filter(o => o && (o.id || o.invoice || o.invoice_number));
 
+  const yAxisTicks = [1, 0.75, 0.5, 0.25, 0].map(multiplier => chartMaxVal * multiplier);
+  
+  const formatYAxis = (val) => {
+    if (val === 0) return "0";
+    if (val >= 1000000000) return (val / 1000000000).toFixed(1).replace(/\.0$/, '') + "M"; 
+    if (val >= 1000000) return (val / 1000000).toFixed(1).replace(/\.0$/, '') + "Jt"; 
+    if (val >= 1000) return (val / 1000).toFixed(0) + "Rb"; 
+    return val;
+  };
+
+  const handleMouseMove = (e, value) => {
+    setTooltip({
+      show: true,
+      x: e.clientX,
+      y: e.clientY,
+      value: value
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setTooltip(prev => ({ ...prev, show: false }));
+  };
+
+  const minWidthClass = chartMode === 'bulan' ? 'min-w-[32px]' : 'min-w-[40px] md:min-w-[48px]';
+  const skeletonCount = chartMode === "tahun" ? 12 : chartMode === "bulan" ? 30 : 7;
+
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         .dashboard-root { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .scrollbar-hidden::-webkit-scrollbar { display: none; }
-        .scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Modifikasi custom scrollbar tunggal */
+        .custom-x-scrollbar::-webkit-scrollbar {
+          height: 6px;
+        }
+        .custom-x-scrollbar::-webkit-scrollbar-track {
+          background: #f1f5f9; 
+          border-radius: 4px;
+        }
+        .custom-x-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1; 
+          border-radius: 4px;
+        }
+        .custom-x-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8; 
+        }
       `}</style>
+
+      {/* Floating Tooltip yang mengikuti kursor */}
+      {tooltip.show && (
+        <div 
+          className="fixed z-[100] pointer-events-none bg-slate-900 text-white text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded shadow-lg transform -translate-x-1/2 -translate-y-full"
+          style={{ left: tooltip.x, top: tooltip.y - 15 }}
+        >
+          Rp {new Intl.NumberFormat('id-ID').format(tooltip.value)}
+          <div className="absolute w-2 h-2 bg-slate-900 rotate-45 left-1/2 -translate-x-1/2 -bottom-1"></div>
+        </div>
+      )}
 
       <div className="dashboard-root space-y-2 p-2 lg:p-1 text-slate-800">
 
-        {/* HEADER */}
         <div className="animate-[fadeIn_0.4s_ease-out] flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 pb-3">
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 lg:text-3xl">
@@ -228,9 +279,7 @@ export default function DashboardAdmin() {
           </div>
         </div>
 
-        {/* STAT STATS CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {/* Card Pendapatan */}
           <div className="bg-white border border-slate-200 hover:border-emerald-300 rounded-2xl p-6 relative overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 group">
             <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
             <div className="flex justify-between items-start">
@@ -249,7 +298,6 @@ export default function DashboardAdmin() {
             </p>
           </div>
 
-          {/* Card Pesanan */}
           <div className="bg-white border border-slate-200 hover:border-indigo-300 rounded-2xl p-6 relative overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 group">
             <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500"></div>
             <div className="flex justify-between items-start">
@@ -268,7 +316,6 @@ export default function DashboardAdmin() {
             </p>
           </div>
 
-          {/* Card Produk */}
           <div className={`bg-white border rounded-2xl p-6 relative overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 group ${!loading && lowStockCount > 0 ? 'border-rose-200 bg-rose-50/20' : 'border-slate-200 hover:border-amber-300'}`}>
             <div className={`absolute top-0 left-0 right-0 h-1 ${!loading && lowStockCount > 0 ? 'bg-rose-500' : 'bg-amber-500'}`}></div>
             <div className="flex justify-between items-start">
@@ -296,11 +343,9 @@ export default function DashboardAdmin() {
           </div>
         </div>
 
-        {/* DATA MANAGEMENT WORKSPACE */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          {/* Diagram Grafik Batang */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 lg:p-6 shadow-sm lg:col-span-2 flex flex-col justify-between">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 lg:p-6 shadow-sm lg:col-span-2 flex flex-col justify-between overflow-hidden">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <div>
                 <h3 className="text-base font-bold text-slate-900">Statistik Penjualan</h3>
@@ -338,49 +383,81 @@ export default function DashboardAdmin() {
               </div>
             </div>
 
-            {/* Area Komponen Chart Canvas */}
-            <div className="h-56 border-b-2 border-l-2 border-slate-200 px-2 flex items-end gap-1 sm:gap-2 relative select-none overflow-x-auto scrollbar-hidden">
-              {/* Garis Grid Penanda */}
-              {[25, 50, 75].map(p => (
-                <div key={p} className="absolute left-0 right-0 border-t border-dashed border-slate-100 pointer-events-none" style={{ bottom: `${p}%` }} />
-              ))}
+            <div className="flex h-64 mt-2">
+              {/* Sumbu Y (Rentang Pendapatan) */}
+              <div className="flex flex-col justify-between items-end pr-2 md:pr-4 pt-4 pb-11 h-full w-12 md:w-16 text-[9px] md:text-[10px] text-slate-400 font-bold flex-shrink-0">
+                {yAxisTicks.map((tick, i) => (
+                  <span key={i} className="leading-none transform translate-y-1">{formatYAxis(tick)}</span>
+                ))}
+              </div>
 
-              {loading ? (
-                <div className="w-full flex items-end gap-2 h-full pb-1">
-                  {Array.from({ length: chartMode === "tahun" ? 12 : 7 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="flex-1 bg-slate-100 rounded-t animate-pulse"
-                      style={{ height: `${[40, 60, 30, 75, 50, 85, 55, 45, 65, 35, 70, 55][i % 12]}%` }}
-                    />
-                  ))}
-                </div>
-              ) : (
-                chartData.map((d, i) => (
-                  <div key={i} className="flex-1 h-full flex flex-col justify-end items-center group/bar min-w-[24px]">
-                    <div
-                      className={`w-full rounded-t transition-all duration-500 relative cursor-pointer ${d.active ? 'bg-gradient-to-t from-indigo-600 to-blue-500 shadow-sm' : 'bg-slate-200 hover:bg-blue-300'}`}
-                      style={{ height: `${d.height}%` }}
-                    >
-                      {/* Tooltip Hover Modern */}
-                      <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded shadow-md opacity-0 group-hover/bar:opacity-100 transition-opacity z-20 whitespace-nowrap pointer-events-none">
-                        Rp {new Intl.NumberFormat('id-ID').format(d.value)}
-                      </div>
+              {/* Area Batang & Sumbu X */}
+              <div className="flex-1 relative flex flex-col min-w-0">
+                
+                <div className="flex-1 overflow-x-auto custom-x-scrollbar flex flex-col relative z-10 pb-1">
+                  <div className="flex-1 flex flex-col min-w-max px-2 relative">
+                    
+                    <div className="absolute left-0 right-0 top-4 bottom-8 flex flex-col justify-between pointer-events-none z-0">
+                      {[...Array(5)].map((_, i) => (
+                        <div key={i} className="w-full border-t border-dashed border-slate-200"></div>
+                      ))}
+                      <div className="w-full border-t border-slate-300"></div>
                     </div>
 
-                    {(chartMode !== "bulan" || (i % 5 === 0 || i === chartData.length - 1)) && (
-                      <span className={`text-[10px] font-bold mt-2 ${d.active ? 'text-blue-600' : 'text-slate-400'}`}>
-                        {d.label}
-                      </span>
-                    )}
+                    <div className="flex-1 flex items-end gap-1 sm:gap-2 pt-4 relative z-10">
+                      {loading ? (
+                        <div className="w-full flex items-end gap-2 h-full">
+                          {Array.from({ length: skeletonCount }).map((_, i) => (
+                            <div
+                              key={i}
+                              className={`flex-1 bg-slate-100 rounded-t animate-pulse ${minWidthClass}`}
+                              style={{ height: `${[40, 60, 30, 75, 50, 85, 55, 45, 65, 35, 70, 55][i % 12]}%` }}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        chartData.map((d, i) => (
+                          <div key={i} className={`flex-1 h-full flex flex-col justify-end items-center group/bar ${minWidthClass} relative`}>
+                            <div
+                              onMouseMove={(e) => handleMouseMove(e, d.value)}
+                              onMouseLeave={handleMouseLeave}
+                              className={`w-full rounded-t-sm transition-all duration-300 cursor-pointer ${d.active ? 'bg-gradient-to-t from-blue-700 to-blue-500 shadow-sm' : 'bg-slate-200 hover:bg-blue-300'}`}
+                              style={{ height: `${d.height}%` }}
+                            />
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="h-8 flex items-start gap-1 sm:gap-2 pt-2 relative z-10">
+                      {loading ? (
+                        <div className="w-full flex items-start gap-2 h-full">
+                          {Array.from({ length: skeletonCount }).map((_, i) => (
+                            <div key={i} className={`flex-1 flex justify-center ${minWidthClass}`}>
+                              <div className="w-4 h-2 bg-slate-100 rounded animate-pulse"></div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        chartData.map((d, i) => (
+                          <div key={i} className={`flex-1 flex justify-center ${minWidthClass}`}>
+                            <span className={`text-[9px] md:text-[10px] font-bold ${d.active ? 'text-blue-600' : 'text-slate-400'}`}>
+                              {d.label}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
                   </div>
-                ))
-              )}
+                </div>
+
+              </div>
             </div>
 
-            <div className="flex gap-4 mt-4 border-t border-slate-50 pt-3">
+            <div className="flex gap-4 mt-2 border-t border-slate-50 pt-3">
               <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-                <span className="w-2.5 h-2.5 rounded-sm bg-gradient-to-r from-indigo-500 to-blue-500 inline-block" />
+                <span className="w-2.5 h-2.5 rounded-sm bg-gradient-to-r from-blue-700 to-blue-500 inline-block" />
                 Periode Aktif / Tertinggi
               </div>
               <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
@@ -390,7 +467,6 @@ export default function DashboardAdmin() {
             </div>
           </div>
 
-          {/* Sidebar Panel - Peringatan Menipisnya Stok */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 lg:p-6 shadow-sm flex flex-col justify-between">
             <div>
               <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
@@ -451,8 +527,7 @@ export default function DashboardAdmin() {
 
         </div>
 
-        {/* DATATABLE DATA TRANSAKSI TERBARU */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mt-6">
           <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-slate-50/40">
             <div>
               <h3 className="text-base font-bold text-slate-900">Pesanan Terkini</h3>
@@ -537,7 +612,6 @@ export default function DashboardAdmin() {
   );
 }
 
-/* ===== SUB COMPONENT ROW DATA LIST ===== */
 function TableRow({ invoice, name, total, courier, status, date, onClick }) {
   const statusConfig = {
     pending: { label: "Menunggu", bg: "bg-amber-50 border-amber-200 text-amber-800", dot: "bg-amber-500" },

@@ -15,7 +15,7 @@ import {
   HiOutlinePhotograph,
   HiOutlineCube,
   HiOutlineTruck,
-  HiOutlineTicket // ✅ Icon baru untuk diskon
+  HiOutlineTicket
 } from 'react-icons/hi';
 import Swal from 'sweetalert2';
 
@@ -33,7 +33,6 @@ export default function ProductFormAdmin() {
     description: '',
     weight: '',
     dimensions: '',
-    // ✅ Tambahan state untuk diskon
     discount_percent: '',
     discount_end_date: ''
   });
@@ -61,8 +60,8 @@ export default function ProductFormAdmin() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
-      if (file.size > 5 * 1024 * 1024) {
-        Swal.fire('Error', 'Ukuran file maksimal 5MB', 'error');
+      if (file.size > 10 * 1024 * 1024) {
+        Swal.fire('Error', 'Ukuran file maksimal 10MB', 'error');
         return;
       }
       setImage(file);
@@ -75,8 +74,8 @@ export default function ProductFormAdmin() {
     setDragOver(false);
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith('image/')) {
-      if (file.size > 5 * 1024 * 1024) {
-        Swal.fire('Error', 'Ukuran file maksimal 5MB', 'error');
+      if (file.size > 10 * 1024 * 1024) {
+        Swal.fire('Error', 'Ukuran file maksimal 10MB', 'error');
         return;
       }
       setImage(file);
@@ -86,19 +85,37 @@ export default function ProductFormAdmin() {
 
   const handleGalleryChange = (e) => {
     const files = Array.from(e.target.files);
+    
+    // Hanya memproses file gambar
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
 
-    const validFiles = imageFiles.filter(file => file.size <= 5 * 1024 * 1024);
+    // Saring file yang ukurannya di bawah 10MB
+    const validFiles = imageFiles.filter(file => file.size <= 10 * 1024 * 1024);
+    
     if (validFiles.length !== imageFiles.length) {
-      Swal.fire('Peringatan', 'Beberapa file melebihi 5MB dan tidak disertakan', 'warning');
+      Swal.fire('Peringatan', 'Beberapa file melebihi 10MB dan tidak disertakan', 'warning');
     }
 
-    if (validFiles.length > 0 && galleryPreviews.length + validFiles.length <= 4) {
-      setGalleryImages(prev => [...prev, ...validFiles]);
-      const newPreviews = validFiles.map(file => URL.createObjectURL(file));
+    // Hitung berapa sisa slot foto yang masih kosong (Maksimal 2)
+    const spaceLeft = 2 - galleryPreviews.length;
+    
+    if (spaceLeft <= 0) {
+        Swal.fire('Peringatan', 'Kapasitas penuh! Maksimal 2 foto tambahan.', 'warning');
+        return;
+    }
+
+    // Ambil file yang valid sesuai jumlah slot yang tersisa saja (mencegah kelebihan kuota)
+    const allowedFiles = validFiles.slice(0, spaceLeft);
+
+    if (allowedFiles.length > 0) {
+      setGalleryImages(prev => [...prev, ...allowedFiles]);
+      const newPreviews = allowedFiles.map(file => URL.createObjectURL(file));
       setGalleryPreviews(prev => [...prev, ...newPreviews]);
-    } else if (galleryPreviews.length + validFiles.length > 4) {
-      Swal.fire('Peringatan', 'Maksimal 4 foto tambahan', 'warning');
+      
+      // Jika pengguna memasukkan terlalu banyak file, beri tahu bahwa sebagian terpotong
+      if(validFiles.length > spaceLeft) {
+          Swal.fire('Peringatan', `Hanya ${spaceLeft} foto yang ditambahkan untuk memenuhi batas maksimal (2).`, 'info');
+      }
     }
   };
 
@@ -111,7 +128,6 @@ export default function ProductFormAdmin() {
     e.preventDefault();
     setLoading(true);
 
-    // ✅ Validasi logika diskon sederhana
     if (formData.discount_percent && !formData.discount_end_date) {
       setLoading(false);
       return Swal.fire('Perhatian', 'Jika memasukkan persentase diskon, batas waktu berakhir diskon juga harus diisi.', 'warning');
@@ -131,7 +147,6 @@ export default function ProductFormAdmin() {
       data.append('weight', formData.weight);
       data.append('dimensions', formData.dimensions);
 
-      // ✅ Tambahkan payload diskon
       if (formData.discount_percent) data.append('discount_percent', formData.discount_percent);
       if (formData.discount_end_date) data.append('discount_end_date', formData.discount_end_date);
 
@@ -177,7 +192,6 @@ export default function ProductFormAdmin() {
 
   const isFormValid = formData.name && formData.category_id && formData.price && formData.stock && image;
 
-  // Hitung perkiraan harga setelah diskon (untuk preview real-time)
   const calculateDiscount = () => {
     if (!formData.price || !formData.discount_percent) return null;
     const price = Number(formData.price);
@@ -203,12 +217,8 @@ export default function ProductFormAdmin() {
 
       <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-6 items-start">
 
-        {/* ==============================
-            LEFT COLUMN
-            ============================== */}
         <div className="flex-1 w-full space-y-6">
 
-          {/* 1. Informasi Dasar */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200 bg-gray-50/50">
               <h2 className="text-base font-semibold text-gray-800 flex items-center gap-2">
@@ -247,7 +257,6 @@ export default function ProductFormAdmin() {
             </div>
           </div>
 
-          {/* 2. Media Produk */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200 bg-gray-50/50">
               <h2 className="text-base font-semibold text-gray-800 flex items-center gap-2">
@@ -283,7 +292,7 @@ export default function ProductFormAdmin() {
                   >
                     <HiCloudUpload className="w-8 h-8 text-gray-400 mb-2" />
                     <p className="text-sm font-medium text-blue-600 mb-1">Klik untuk upload</p>
-                    <p className="text-xs text-gray-500">atau drag and drop (Max 5MB)</p>
+                    <p className="text-xs text-gray-500">atau drag and drop (Max 10MB)</p>
                     <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} required />
                   </label>
                 )}
@@ -291,7 +300,7 @@ export default function ProductFormAdmin() {
 
               <div className="pt-4 border-t border-gray-100">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Foto Tambahan (Opsional) <span className="text-gray-400 font-normal ml-1">Maks 4</span>
+                  Foto Tambahan (Opsional) <span className="text-gray-400 font-normal ml-1">Maks 2</span>
                 </label>
                 <div className="flex flex-wrap gap-3">
                   {galleryPreviews.map((url, index) => (
@@ -302,7 +311,7 @@ export default function ProductFormAdmin() {
                       </button>
                     </div>
                   ))}
-                  {galleryPreviews.length < 4 && (
+                  {galleryPreviews.length < 2 && (
                     <label className="flex flex-col items-center justify-center w-24 h-24 border border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
                       <HiPlus className="w-5 h-5 text-gray-400" />
                       <span className="text-[10px] text-gray-500 font-medium mt-1">Tambah</span>
@@ -314,7 +323,6 @@ export default function ProductFormAdmin() {
             </div>
           </div>
 
-          {/* 3. Harga, Diskon & Stok */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200 bg-gray-50/50">
               <h2 className="text-base font-semibold text-gray-800 flex items-center gap-2">
@@ -357,7 +365,6 @@ export default function ProductFormAdmin() {
                 </div>
               </div>
 
-              {/* ✅ BAGIAN DISKON (BARU) */}
               <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-lg">
                 <h3 className="text-sm font-semibold text-blue-800 flex items-center gap-2 mb-4">
                   <HiOutlineTicket className="w-4 h-4" /> Atur Diskon (Opsional)
@@ -390,24 +397,26 @@ export default function ProductFormAdmin() {
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       onChange={handleChange}
                       value={formData.discount_end_date}
-                      min={new Date().toISOString().slice(0, 16)} // Tidak bisa pilih tanggal lampau
+                      min={new Date().toISOString().slice(0, 16)}
                     />
                   </div>
                 </div>
 
-                {/* Preview Harga Diskon Realtime */}
                 {discountedPrice && (
                   <div className="mt-4 pt-3 border-t border-blue-200/60 flex justify-between items-center">
                     <span className="text-xs text-blue-600 font-medium">Harga setelah diskon:</span>
                     <span className="text-lg font-bold text-red-600">Rp {discountedPrice.toLocaleString('id-ID')}</span>
                   </div>
                 )}
+                {formData.discount_percent && formData.discount_end_date && (
+                  <p className="text-[10px] text-gray-500 mt-3 text-center">
+                    Kosongkan kedua kolom di atas jika ingin menonaktifkan diskon.
+                  </p>
+                )}
               </div>
-
             </div>
           </div>
 
-          {/* 4. Pengiriman */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200 bg-gray-50/50">
               <h2 className="text-base font-semibold text-gray-800 flex items-center gap-2">
@@ -450,10 +459,29 @@ export default function ProductFormAdmin() {
 
         </div>
 
-        {/* ==============================
-            RIGHT COLUMN - SIDEBAR
-            ============================== */}
         <div className="w-full lg:w-80 space-y-6 lg:sticky lg:top-6">
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <h2 className="text-sm font-semibold text-gray-900 mb-4">Aksi</h2>
+            <button
+              type="submit"
+              disabled={loading || !isFormValid}
+              className="w-full bg-blue-600 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-blue-700 focus:outline-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-3"
+            >
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <HiCheckCircle className="w-5 h-5" />
+              )}
+              Simpan Produk
+            </button>
+            <Link
+              to="/admin/products"
+              className="w-full block text-center py-2.5 px-4 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Batal
+            </Link>
+          </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200 bg-gray-50/50">
@@ -485,28 +513,6 @@ export default function ProductFormAdmin() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-            <h2 className="text-sm font-semibold text-gray-900 mb-4">Aksi</h2>
-            <button
-              type="submit"
-              disabled={loading || !isFormValid}
-              className="w-full bg-blue-600 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-blue-700 focus:outline-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-3"
-            >
-              {loading ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <HiCheckCircle className="w-5 h-5" />
-              )}
-              Simpan Produk
-            </button>
-
-            <Link
-              to="/admin/products"
-              className="w-full block text-center py-2.5 px-4 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Batal
-            </Link>
-          </div>
         </div>
       </form>
     </div>

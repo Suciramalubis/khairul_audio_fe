@@ -35,7 +35,6 @@ export default function OrderReviewPage() {
         if (orderData && Array.isArray(orderData.items)) {
           const initialReviews = {};
           orderData.items.forEach(item => {
-            // ✅ PERBAIKAN 1: Fokus ambil product_id yang valid. JANGAN pakai item.id (karena itu id order_item)
             const pId = item.product_id || item.product?.id || item.produk?.id;
             if (pId) {
               initialReviews[pId] = {
@@ -87,10 +86,16 @@ export default function OrderReviewPage() {
     setReviews(prev => {
       const currentData = prev[productId] || { rating: 5, comment: "", images: [], imagePreviews: [] };
 
-      const spaceLeft = 3 - (currentData.images?.length || 0);
+      // Sesuaikan Sisa Ruang Menjadi Maksimal 2 Foto Saja
+      const spaceLeft = 2 - (currentData.images?.length || 0);
+
+      if (spaceLeft <= 0) {
+        Swal.fire("Peringatan", "Maksimal 2 foto untuk setiap produk.", "warning");
+        return prev;
+      }
 
       if (files.length > spaceLeft) {
-        Swal.fire("Peringatan", `Maksimal 3 foto untuk setiap produk.`, "warning");
+        Swal.fire("Peringatan", `Hanya ${spaceLeft} foto yang ditambahkan untuk memenuhi batas maksimal 2 foto.`, "info");
       }
 
       const allowedFiles = files.slice(0, spaceLeft);
@@ -162,7 +167,7 @@ export default function OrderReviewPage() {
         icon: "success",
         title: "Ulasan Terkirim!",
         text: "Terima kasih telah memberikan ulasan.",
-        confirmButtonColor: "#f59e0b"
+        confirmButtonColor: "#2563eb"
       }).then(() => {
         navigate(`/orders/${order.id}`);
       });
@@ -179,7 +184,7 @@ export default function OrderReviewPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
       <Navbar />
       <div className="flex-grow flex justify-center items-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-600"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
       </div>
       <Footer />
     </div>
@@ -191,7 +196,7 @@ export default function OrderReviewPage() {
       <div className="flex-grow flex flex-col items-center justify-center">
         <HiOutlineArchive className="w-16 h-16 text-gray-300 mb-4" />
         <p className="text-gray-500 font-medium">Tidak ada produk yang perlu diulas.</p>
-        <button onClick={() => navigate(-1)} className="mt-4 text-amber-600 font-semibold hover:underline">
+        <button onClick={() => navigate(-1)} className="mt-4 text-blue-600 font-semibold hover:underline">
           Kembali
         </button>
       </div>
@@ -204,12 +209,12 @@ export default function OrderReviewPage() {
       <Navbar />
 
       <main className="flex-grow container mx-auto px-4 sm:px-6 py-8 max-w-3xl">
-        <button onClick={() => navigate(-1)} className="mb-6 flex items-center gap-2 text-gray-500 hover:text-amber-600 font-medium transition">
+        <button onClick={() => navigate(-1)} className="mb-6 flex items-center gap-2 text-gray-500 hover:text-blue-600 font-medium transition">
           <HiOutlineChevronLeft className="w-5 h-5" /> Kembali
         </button>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-          <div className="p-5 border-b border-gray-100 bg-amber-500 text-white">
+          <div className="p-5 border-b border-blue-100 bg-blue-600 text-white">
             <h1 className="text-lg font-bold">Penilaian Produk</h1>
             <p className="text-sm opacity-90 font-medium mt-1">Invoice: {order.invoice_number || `INV-${order.id}`}</p>
           </div>
@@ -218,7 +223,6 @@ export default function OrderReviewPage() {
         <form onSubmit={handleSubmitReviews} className="space-y-6">
           {order.items.map((item, index) => {
 
-            // ✅ PERBAIKAN 2: Pastikan ID yang ditangkap konsisten dengan di useEffect
             const productId = item.product_id || item.product?.id || item.produk?.id;
             const actualProduct = item.product || item.produk || item;
 
@@ -263,7 +267,7 @@ export default function OrderReviewPage() {
                             }`}
                         />
                       ))}
-                      <span className="text-sm font-black text-amber-600 ml-3 uppercase tracking-wider">
+                      <span className="text-sm font-black text-amber-500 ml-3 uppercase tracking-wider">
                         {currentReview.rating === 5 ? "Sangat Baik" : currentReview.rating === 4 ? "Baik" : currentReview.rating === 3 ? "Cukup" : currentReview.rating === 2 ? "Buruk" : "Sangat Buruk"}
                       </span>
                     </div>
@@ -276,12 +280,12 @@ export default function OrderReviewPage() {
                       value={currentReview.comment}
                       onChange={(e) => handleCommentChange(productId, e.target.value)}
                       placeholder="Bagaimana kualitas produk ini? Apakah sesuai deskripsi? Bagikan pengalaman Anda..."
-                      className="w-full p-4 bg-gray-50/50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none text-sm resize-none transition-all placeholder:text-gray-400"
+                      className="w-full p-4 bg-gray-50/50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm resize-none transition-all placeholder:text-gray-400"
                     ></textarea>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Tambahkan Foto <span className="text-xs text-gray-400 font-normal">(Maksimal 3, Opsional)</span></label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Tambahkan Foto <span className="text-xs text-gray-400 font-normal">(Maksimal 2 Foto)</span></label>
                     <div className="flex flex-wrap gap-3">
 
                       {Array.isArray(currentReview.imagePreviews) && currentReview.imagePreviews.map((url, imgIndex) => (
@@ -301,8 +305,8 @@ export default function OrderReviewPage() {
                         </div>
                       ))}
 
-                      {(!currentReview.images || currentReview.images.length < 3) && (
-                        <label className="w-20 h-20 md:w-24 md:h-24 flex flex-col items-center justify-center border-2 border-dashed border-amber-300 bg-amber-50/50 rounded-lg cursor-pointer hover:bg-amber-100 hover:border-amber-400 transition-colors text-amber-600 group">
+                      {(!currentReview.images || currentReview.images.length < 2) && (
+                        <label className="w-20 h-20 md:w-24 md:h-24 flex flex-col items-center justify-center border-2 border-dashed border-blue-300 bg-blue-50/50 rounded-lg cursor-pointer hover:bg-blue-100 hover:border-blue-400 transition-colors text-blue-600 group">
                           <HiOutlineCamera className="w-6 h-6 mb-1.5 group-hover:scale-110 transition-transform" />
                           <span className="text-[10px] md:text-xs font-bold">Tambah Foto</span>
                           <input
@@ -325,9 +329,9 @@ export default function OrderReviewPage() {
             <button type="button" onClick={() => navigate(-1)} className="px-6 py-3 bg-white border border-gray-300 rounded-xl font-bold text-sm text-gray-700 hover:bg-gray-50 transition">
               Batal
             </button>
-            <button type="submit" disabled={submitting} className="px-8 py-3 bg-amber-500 text-slate-900 rounded-xl font-bold text-sm hover:bg-amber-400 active:scale-95 transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 min-w-[160px]">
+            <button type="submit" disabled={submitting} className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 active:scale-95 transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 min-w-[160px]">
               {submitting ? (
-                <div className="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               ) : (
                 <>Kirim Ulasan</>
               )}

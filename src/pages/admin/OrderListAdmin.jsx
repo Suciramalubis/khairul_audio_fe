@@ -159,7 +159,6 @@ export default function OrderListAdmin() {
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
-                            {/* PERBAIKAN: Header tabel dipisah kolomnya secara spesifik */}
                             <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 uppercase tracking-wider text-xs font-semibold">
                                 <tr>
                                     <th className="px-6 py-4">Invoice & Pelanggan</th>
@@ -175,6 +174,7 @@ export default function OrderListAdmin() {
                                 {filteredOrders.length > 0 ? (
                                     filteredOrders.map((order) => {
                                         const statusConfig = getStatusConfig(order.status);
+                                        const currentStatus = String(order.status).toLowerCase();
 
                                         const courierCode = order.shipping_courier || order.courier || '';
                                         const courierService = order.shipping_service || order.service || '';
@@ -204,6 +204,14 @@ export default function OrderListAdmin() {
 
                                         const paymentMethodName = order.payment_method || order.payment_type || order.payment || order.payment_name || "Transfer Bank";
 
+                                        // LOGIKA KUNCI DROPDOWN
+                                        // Dikunci (disabled) jika status adalah: menunggu pembayaran, sudah dikirim, selesai, atau dibatalkan.
+                                        const isDropdownDisabled = 
+                                            currentStatus === 'pending' || 
+                                            currentStatus === 'shipped' || 
+                                            currentStatus === 'completed' || 
+                                            currentStatus === 'cancelled';
+
                                         return (
                                             <tr key={order.id} className="hover:bg-gray-50/80 transition-colors">
                                                 <td className="px-6 py-4">
@@ -220,45 +228,45 @@ export default function OrderListAdmin() {
                                                 <td className="px-6 py-4 text-gray-500 whitespace-nowrap">
                                                     {formattedDate}
                                                 </td>
-
-                                                {/* PERBAIKAN DESAIN: Informasi dipisahkan menjadi 3 kolom mandiri */}
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span className="font-bold text-gray-900 text-[15px]">
                                                         Rp {new Intl.NumberFormat('id-ID').format(price)}
                                                     </span>
                                                 </td>
-
                                                 <td className="px-6 py-4">
                                                     <span className="text-xs text-gray-700 flex items-center gap-1 font-bold bg-amber-50 text-amber-800 px-2.5 py-1 rounded-md border border-amber-200 w-fit whitespace-nowrap">
                                                         <HiOutlineTruck className="w-4 h-4 text-amber-600" /> {fullShippingStr}
                                                     </span>
                                                 </td>
-
                                                 <td className="px-6 py-4">
                                                     <span className="text-xs text-gray-700 flex items-center gap-1 font-bold bg-blue-50 text-blue-800 px-2.5 py-1 rounded-md border border-blue-200 w-fit whitespace-nowrap">
                                                         <HiOutlineCreditCard className="w-4 h-4 text-blue-600" /> {paymentMethodName}
                                                     </span>
                                                 </td>
-
                                                 <td className="px-6 py-4 text-center whitespace-nowrap">
                                                     <div className="relative inline-block">
                                                         <select
                                                             value={order.status || 'pending'}
                                                             onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                                                            className={`appearance-none cursor-pointer pl-9 pr-8 py-1.5 rounded-full text-xs font-bold border outline-none focus:ring-2 focus:ring-offset-1 transition-all ${statusConfig.color}`}
+                                                            disabled={isDropdownDisabled}
+                                                            className={`appearance-none pl-9 pr-8 py-1.5 rounded-full text-xs font-bold border outline-none focus:ring-2 focus:ring-offset-1 transition-all ${statusConfig.color} ${isDropdownDisabled ? 'opacity-80 cursor-not-allowed' : 'cursor-pointer hover:brightness-95'}`}
+                                                            title={isDropdownDisabled ? "Status ini tidak dapat diubah secara manual." : "Ubah status pesanan"}
                                                         >
-                                                            <option value="pending">Menunggu Pembayaran</option>
-                                                            <option value="processing">Diproses</option>
-                                                            <option value="shipped">Dikirim</option>
-                                                            <option value="completed">Selesai</option>
-                                                            <option value="cancelled">Dibatalkan</option>
+                                                            <option value="pending" disabled>Menunggu Pembayaran</option>
+                                                            <option value="processing" disabled={currentStatus !== 'processing'}>Diproses</option>
+                                                            {/* Opsi Dikirim Dinonaktifkan di sini karena hanya bisa aktif lewat input resi */}
+                                                            <option value="shipped" disabled>Dikirim</option>
+                                                            <option value="completed" disabled>Selesai</option>
+                                                            <option value="cancelled" disabled={currentStatus !== 'processing' && currentStatus !== 'pending' && currentStatus !== 'cancelled'}>Dibatalkan</option>
                                                         </select>
-                                                        <div className={`absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-current opacity-80`}>
+                                                        <div className={`absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-current ${isDropdownDisabled ? 'opacity-50' : 'opacity-80'}`}>
                                                             {statusConfig.icon}
                                                         </div>
-                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
-                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"></path></svg>
-                                                        </div>
+                                                        {!isDropdownDisabled && (
+                                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
+                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"></path></svg>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-center whitespace-nowrap">

@@ -228,7 +228,7 @@ export default function AboutPage() {
             </div>
           </div>
         </section>
-
+        
         {/* ================= KONTAK & LOKASI ================= */}
         <section ref={contactRef} className="border-t border-slate-200 bg-white mb-8">
           <div className="flex flex-col lg:flex-row">
@@ -279,19 +279,29 @@ export default function AboutPage() {
               </a>
             </div>
 
-            <div className="w-full lg:w-1/2 min-h-[400px] bg-slate-200 relative">
+            <a 
+              href={GMAPS_URL}
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="w-full lg:w-1/2 min-h-[400px] bg-slate-200 relative group cursor-pointer block overflow-hidden"
+              title="Klik untuk membuka Google Maps"
+            >
               <img 
                 src={mapBgImage} 
                 alt="Peta Lokasi Khairul Audio" 
-                className="absolute inset-0 w-full h-full object-cover grayscale"
+                className="absolute inset-0 w-full h-full object-cover grayscale transition-transform duration-700 group-hover:scale-105 group-hover:grayscale-0"
                 onError={(e) => { e.target.style.display = 'none'; }}
               />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center shadow-xl border-2 border-white">
-                  <HiLocationMarker className="w-6 h-6 text-blue-400" />
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-900/10 group-hover:bg-transparent transition-colors duration-300">
+                {/* Efek denyut (Pulse) agar lebih terlihat seperti tombol aktif */}
+                <div className="relative flex items-center justify-center">
+                  <div className="absolute w-16 h-16 bg-blue-500 rounded-full opacity-40 animate-ping"></div>
+                  <div className="w-14 h-14 bg-slate-900 rounded-full flex items-center justify-center shadow-2xl border-2 border-white relative z-10 transform transition-transform duration-300 group-hover:scale-110 group-hover:bg-blue-600">
+                    <HiLocationMarker className="w-7 h-7 text-white" />
+                  </div>
                 </div>
               </div>
-            </div>
+            </a>
 
           </div>
         </section>

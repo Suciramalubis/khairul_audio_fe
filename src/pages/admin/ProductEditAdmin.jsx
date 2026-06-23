@@ -16,8 +16,7 @@ import {
   HiOutlineCube,
   HiOutlinePhotograph,
   HiOutlineTruck,
-  HiEye,
-  HiOutlineTicket // ✅ Icon diskon
+  HiOutlineTicket
 } from 'react-icons/hi';
 import Swal from 'sweetalert2';
 
@@ -38,7 +37,6 @@ export default function ProductEditAdmin() {
     weight: '',
     dimensions: '',
     status: 'active',
-    // ✅ Tambahan state diskon
     discount_percent: '',
     discount_end_date: ''
   });
@@ -49,20 +47,15 @@ export default function ProductEditAdmin() {
   const [newGalleryImages, setNewGalleryImages] = useState([]);
   const [newGalleryPreviews, setNewGalleryPreviews] = useState([]);
 
-  // ----------------------------------------
-  // 1. AMBIL DATA LAMA DARI DATABASE
-  // ----------------------------------------
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         const res = await axios.get(`${API_BASE_URL}/admin/products/${id}`);
         const data = res.data;
 
-        // Format datetime untuk input (YYYY-MM-DDThh:mm)
         let formattedDate = '';
         if (data.discount_end_date) {
           const dateObj = new Date(data.discount_end_date);
-          // Menyesuaikan timezone lokal agar tampil benar di input
           dateObj.setMinutes(dateObj.getMinutes() - dateObj.getTimezoneOffset());
           formattedDate = dateObj.toISOString().slice(0, 16);
         }
@@ -118,6 +111,10 @@ export default function ProductEditAdmin() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
+      if (file.size > 10 * 1024 * 1024) {
+        Swal.fire('Error', 'Ukuran file maksimal 10MB', 'error');
+        return;
+      }
       setImage(file);
       setPreview(URL.createObjectURL(file));
     }
@@ -128,6 +125,10 @@ export default function ProductEditAdmin() {
     setDragOver(false);
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith('image/')) {
+      if (file.size > 10 * 1024 * 1024) {
+        Swal.fire('Error', 'Ukuran file maksimal 10MB', 'error');
+        return;
+      }
       setImage(file);
       setPreview(URL.createObjectURL(file));
     }
@@ -135,19 +136,32 @@ export default function ProductEditAdmin() {
 
   const handleGalleryChange = (e) => {
     const files = Array.from(e.target.files);
+    
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
-    const totalExisting = existingGalleries.length + newGalleryPreviews.length;
-    const spaceLeft = 4 - totalExisting;
 
-    if (imageFiles.length > spaceLeft) {
-      Swal.fire('Peringatan', `Anda hanya bisa menambahkan ${spaceLeft} foto lagi.`, 'warning');
+    const validFiles = imageFiles.filter(file => file.size <= 10 * 1024 * 1024);
+    if (validFiles.length !== imageFiles.length) {
+      Swal.fire('Peringatan', 'Beberapa file melebihi 10MB dan tidak disertakan', 'warning');
     }
 
-    const allowedFiles = imageFiles.slice(0, spaceLeft);
+    const totalExisting = existingGalleries.length + newGalleryPreviews.length;
+    const spaceLeft = 2 - totalExisting;
+
+    if (spaceLeft <= 0) {
+        Swal.fire('Peringatan', 'Kapasitas penuh! Maksimal 2 foto tambahan.', 'warning');
+        return;
+    }
+
+    const allowedFiles = validFiles.slice(0, spaceLeft);
+
     if (allowedFiles.length > 0) {
       setNewGalleryImages(prev => [...prev, ...allowedFiles]);
       const newPreviews = allowedFiles.map(file => URL.createObjectURL(file));
       setNewGalleryPreviews(prev => [...prev, ...newPreviews]);
+      
+      if (validFiles.length > spaceLeft) {
+        Swal.fire('Peringatan', `Hanya ${spaceLeft} foto yang ditambahkan agar tidak melebihi batas maksimal 2 foto.`, 'info');
+      }
     }
   };
 
@@ -180,7 +194,6 @@ export default function ProductEditAdmin() {
     e.preventDefault();
     setLoading(true);
 
-    // ✅ Validasi logika diskon sederhana
     if (formData.discount_percent && !formData.discount_end_date) {
       setLoading(false);
       return Swal.fire('Perhatian', 'Batas waktu berakhir diskon harus diisi.', 'warning');
@@ -201,7 +214,6 @@ export default function ProductEditAdmin() {
       data.append('dimensions', formData.dimensions);
       data.append('status', formData.status);
 
-      // Mengatasi kasus jika admin sengaja menghapus diskon (kosongkan)
       data.append('discount_percent', formData.discount_percent || '');
       data.append('discount_end_date', formData.discount_end_date || '');
 
@@ -251,7 +263,6 @@ export default function ProductEditAdmin() {
 
   const isFormValid = formData.name && formData.category_id && formData.price && formData.stock;
 
-  // Hitung perkiraan harga setelah diskon (untuk preview real-time)
   const calculateDiscount = () => {
     if (!formData.price || !formData.discount_percent) return null;
     const price = Number(formData.price);
@@ -288,9 +299,6 @@ export default function ProductEditAdmin() {
 
       <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-6 items-start">
 
-        {/* ==============================
-            LEFT COLUMN 
-            ============================== */}
         <div className="flex-1 w-full space-y-6">
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -362,6 +370,7 @@ export default function ProductEditAdmin() {
                   >
                     <HiCloudUpload className="w-8 h-8 text-gray-400 mb-2" />
                     <p className="text-sm font-medium text-blue-600 mb-1">Klik untuk upload</p>
+                    <p className="text-xs text-gray-500">atau drag and drop (Max 10MB)</p>
                     <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} required={!preview} />
                   </label>
                 )}
@@ -369,7 +378,7 @@ export default function ProductEditAdmin() {
 
               <div className="pt-4 border-t border-gray-100">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Foto Tambahan (Opsional) <span className="text-gray-400 font-normal ml-1">Maks 4</span>
+                  Foto Tambahan (Opsional) <span className="text-gray-400 font-normal ml-1">Maks 2</span>
                 </label>
                 <div className="flex flex-wrap gap-3">
                   {existingGalleries.map((gal) => (
@@ -388,7 +397,7 @@ export default function ProductEditAdmin() {
                       </button>
                     </div>
                   ))}
-                  {(existingGalleries.length + newGalleryPreviews.length) < 4 && (
+                  {(existingGalleries.length + newGalleryPreviews.length) < 2 && (
                     <label className="flex flex-col items-center justify-center w-24 h-24 border border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
                       <HiPlus className="w-5 h-5 text-gray-400" />
                       <input type="file" className="hidden" accept="image/*" multiple onChange={handleGalleryChange} />
@@ -399,7 +408,6 @@ export default function ProductEditAdmin() {
             </div>
           </div>
 
-          {/* 3. Harga, Diskon & Stok */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200 bg-gray-50/50">
               <h2 className="text-base font-semibold text-gray-800 flex items-center gap-2">
@@ -440,7 +448,6 @@ export default function ProductEditAdmin() {
                 </div>
               </div>
 
-              {/* ✅ BAGIAN DISKON (BARU) */}
               <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-lg">
                 <h3 className="text-sm font-semibold text-blue-800 flex items-center gap-2 mb-4">
                   <HiOutlineTicket className="w-4 h-4" /> Atur Diskon (Opsional)
@@ -478,14 +485,12 @@ export default function ProductEditAdmin() {
                   </div>
                 </div>
 
-                {/* Preview Harga Diskon Realtime */}
                 {discountedPrice && (
                   <div className="mt-4 pt-3 border-t border-blue-200/60 flex justify-between items-center">
                     <span className="text-xs text-blue-600 font-medium">Harga setelah diskon:</span>
                     <span className="text-lg font-bold text-red-600">Rp {discountedPrice.toLocaleString('id-ID')}</span>
                   </div>
                 )}
-                {/* Notifikasi jika admin ingin menghapus diskon */}
                 {formData.discount_percent && formData.discount_end_date && (
                   <p className="text-[10px] text-gray-500 mt-3 text-center">
                     Kosongkan kedua kolom di atas jika ingin menonaktifkan diskon.
@@ -495,7 +500,6 @@ export default function ProductEditAdmin() {
             </div>
           </div>
 
-          {/* 4. Pengiriman */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200 bg-gray-50/50">
               <h2 className="text-base font-semibold text-gray-800 flex items-center gap-2">
@@ -536,9 +540,6 @@ export default function ProductEditAdmin() {
 
         </div>
 
-        {/* ==============================
-            RIGHT COLUMN
-            ============================== */}
         <div className="w-full lg:w-80 space-y-6 lg:sticky lg:top-6">
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
@@ -577,8 +578,8 @@ export default function ProductEditAdmin() {
                   type="button"
                   onClick={() => setFormData({ ...formData, category_id: String(cat.id) })}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors text-sm ${formData.category_id === String(cat.id)
-                    ? 'bg-blue-50 text-blue-700 font-medium'
-                    : 'text-gray-600 hover:bg-gray-50'
+                      ? 'bg-blue-50 text-blue-700 font-medium'
+                      : 'text-gray-600 hover:bg-gray-50'
                     }`}
                 >
                   <div className="flex items-center gap-3">

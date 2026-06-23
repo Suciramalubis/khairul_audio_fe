@@ -25,6 +25,11 @@ export default function AdminLoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
+  // ===== FUNGSI LUPA PASSWORD =====
+  const handleForgotPassword = () => {
+    navigate('/forgot-password');
+  };
+
   const handleAdminLogin = async (e) => {
     e.preventDefault();
     setError(null);
@@ -229,7 +234,7 @@ export default function AdminLoginPage() {
               <button
                 type="button"
                 className="text-xs text-amber-600 hover:text-amber-700 font-bold transition-colors"
-                onClick={() => Swal.fire('Info', 'Hubungi Super Admin atau IT Support untuk mereset kata sandi Anda.', 'info')}
+                onClick={handleForgotPassword}
               >
                 Lupa kata sandi?
               </button>

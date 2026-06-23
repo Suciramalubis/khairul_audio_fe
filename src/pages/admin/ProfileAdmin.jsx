@@ -44,15 +44,6 @@ export default function ProfileAdmin() {
 
                             <h3 className="text-lg font-bold text-gray-900">{user?.name || 'Administrator'}</h3>
                             <p className="text-gray-500 text-sm mb-4">{user?.email}</p>
-
-                            <div className="flex gap-2">
-                                <span className="px-2.5 py-0.5 bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-md uppercase tracking-wider">
-                                    Super Admin
-                                </span>
-                                <span className="px-2.5 py-0.5 bg-blue-50 border border-blue-100 text-blue-600 text-[10px] font-bold rounded-md uppercase tracking-wider">
-                                    Verified
-                                </span>
-                            </div>
                         </div>
 
                         {/* Menu Tab Navigasi */}
