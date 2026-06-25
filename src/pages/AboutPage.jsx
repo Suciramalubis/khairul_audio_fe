@@ -22,16 +22,13 @@ import {
   HiPhone,
   HiClock,
   HiOutlinePlay,
-  HiOutlinePause,
-  HiOutlineVolumeUp,
-  HiOutlineVolumeOff
+  HiOutlinePause
 } from 'react-icons/hi';
 
 export default function AboutPage() {
   const contactRef = useRef(null);
   const videoRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(false); // Awalnya tidak diputar
-  const [isMuted, setIsMuted] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [showControls, setShowControls] = useState(false);
 
@@ -49,7 +46,6 @@ export default function AboutPage() {
         videoRef.current.pause();
         setIsPlaying(false);
       } else {
-        // Jika video sudah selesai (currentTime >= duration), reset ke awal
         if (videoRef.current.ended || videoRef.current.currentTime >= videoRef.current.duration - 0.5) {
           videoRef.current.currentTime = 0;
         }
@@ -59,17 +55,8 @@ export default function AboutPage() {
     }
   };
 
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
-  };
-
-  // Handler saat video selesai diputar
   const handleVideoEnded = () => {
     setIsPlaying(false);
-    // Video berhenti di akhir, tidak looping otomatis
   };
 
   return (
@@ -304,16 +291,15 @@ export default function AboutPage() {
                     <video
                       ref={videoRef}
                       className="w-full h-auto max-h-[70vh] object-contain"
-                      muted={isMuted}
-                      // autoPlay dihapus agar tidak langsung berjalan
-                      loop={false} // tidak looping otomatis
+                      muted={false}
+                      loop={false}
                       playsInline
                       controlsList="nodownload noremoteplayback"
                       disablePictureInPicture
                       src={videoTour}
                       onError={() => setVideoError(true)}
                       onClick={togglePlay}
-                      onEnded={handleVideoEnded} // saat selesai, update state
+                      onEnded={handleVideoEnded}
                     >
                       Browser Anda tidak mendukung pemutaran video.
                     </video>
@@ -322,7 +308,7 @@ export default function AboutPage() {
                       🎥 Hasil Instalasi
                     </div>
 
-                    {/* Overlay kontrol */}
+                    {/* Overlay kontrol - hanya tombol Play/Pause */}
                     <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
                       <div className="flex items-center gap-4">
                         <button 
@@ -332,13 +318,6 @@ export default function AboutPage() {
                         >
                           {isPlaying ? <HiOutlinePause className="w-10 h-10" /> : <HiOutlinePlay className="w-10 h-10" />}
                         </button>
-                        <button 
-                          onClick={toggleMute}
-                          className="text-white hover:text-blue-400 transition-colors p-2 rounded-full bg-black/40 backdrop-blur-sm hover:bg-black/60 border border-white/20"
-                          aria-label={isMuted ? 'Unmute' : 'Mute'}
-                        >
-                          {isMuted ? <HiOutlineVolumeOff className="w-5 h-5" /> : <HiOutlineVolumeUp className="w-5 h-5" />}
-                        </button>
                       </div>
                     </div>
                   </>
@@ -346,10 +325,8 @@ export default function AboutPage() {
               </div>
             </div>
 
-            <p className="text-sm text-slate-500 text-center mt-6 italic flex items-center justify-center gap-2">
-              <span className="inline-block w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+            <p className="text-sm text-slate-500 text-center mt-6 italic">
               Video hasil instalasi audio premium di workshop Khairul Audio
-              <span className="inline-block w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
             </p>
           </div>
         </section>
