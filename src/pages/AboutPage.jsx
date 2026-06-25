@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
@@ -9,6 +9,7 @@ import gallery2 from '../assets/img2.jpg';
 import gallery3 from '../assets/img5.png';   
 import gallery4 from '../assets/img4.jpg';   
 import mapBgImage from '../assets/img2.jpg'; 
+import videoTour from '../assets/videos/vid1.mp4';
 
 import { 
   HiOutlineBadgeCheck, 
@@ -19,11 +20,20 @@ import {
   HiCheck,
   HiLocationMarker,
   HiPhone,
-  HiClock
+  HiClock,
+  HiOutlinePlay,
+  HiOutlinePause,
+  HiOutlineVolumeUp,
+  HiOutlineVolumeOff
 } from 'react-icons/hi';
 
 export default function AboutPage() {
   const contactRef = useRef(null);
+  const videoRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false); // Awalnya tidak diputar
+  const [isMuted, setIsMuted] = useState(true);
+  const [videoError, setVideoError] = useState(false);
+  const [showControls, setShowControls] = useState(false);
 
   const scrollToContact = () => {
     if (contactRef.current) {
@@ -32,6 +42,35 @@ export default function AboutPage() {
   };
 
   const GMAPS_URL = "https://www.google.com/maps/search/?api=1&query=Jl.+T.+Amir+Hamzah,+Sei+Agul,+Kec.+Medan+Bar.,+Kota+Medan,+Sumatera+Utara+20235";
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        // Jika video sudah selesai (currentTime >= duration), reset ke awal
+        if (videoRef.current.ended || videoRef.current.currentTime >= videoRef.current.duration - 0.5) {
+          videoRef.current.currentTime = 0;
+        }
+        videoRef.current.play();
+        setIsPlaying(true);
+      }
+    }
+  };
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  // Handler saat video selesai diputar
+  const handleVideoEnded = () => {
+    setIsPlaying(false);
+    // Video berhenti di akhir, tidak looping otomatis
+  };
 
   return (
     <div className="bg-white min-h-screen font-sans text-slate-800 flex flex-col">
@@ -228,7 +267,93 @@ export default function AboutPage() {
             </div>
           </div>
         </section>
-        
+
+        {/* ================= VIDEO HASIL INSTALASI ================= */}
+        <section className="py-16 bg-gradient-to-b from-white via-slate-50 to-white">
+          <div className="container mx-auto px-4 md:px-8 max-w-4xl">
+            <div className="text-center mb-10">
+              <span className="inline-block text-xs font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-4 py-1.5 rounded-full mb-4 border border-blue-100">
+                Hasil Instalasi
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+                Lihat Hasil Instalasi Premium
+              </h2>
+              <p className="text-slate-600 max-w-2xl mx-auto text-base">
+                Lihat hasil akhir instalasi audio premium yang telah kami kerjakan untuk pelanggan setia Khairul Audio.
+              </p>
+            </div>
+
+            <div 
+              className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white group"
+              onMouseEnter={() => setShowControls(true)}
+              onMouseLeave={() => setShowControls(false)}
+            >
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
+              
+              <div className="relative rounded-2xl overflow-hidden bg-black flex justify-center items-center max-h-[80vh]">
+                {videoError ? (
+                  <div className="flex items-center justify-center w-full h-96 bg-slate-800 text-white p-8 text-center">
+                    <div>
+                      <span className="text-5xl block mb-4">🎬</span>
+                      <p className="text-lg font-semibold">Video belum tersedia</p>
+                      <p className="text-sm text-slate-400">Silakan tambahkan file video di folder assets/videos/</p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <video
+                      ref={videoRef}
+                      className="w-full h-auto max-h-[70vh] object-contain"
+                      muted={isMuted}
+                      // autoPlay dihapus agar tidak langsung berjalan
+                      loop={false} // tidak looping otomatis
+                      playsInline
+                      controlsList="nodownload noremoteplayback"
+                      disablePictureInPicture
+                      src={videoTour}
+                      onError={() => setVideoError(true)}
+                      onClick={togglePlay}
+                      onEnded={handleVideoEnded} // saat selesai, update state
+                    >
+                      Browser Anda tidak mendukung pemutaran video.
+                    </video>
+
+                    <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20 pointer-events-none select-none">
+                      🎥 Hasil Instalasi
+                    </div>
+
+                    {/* Overlay kontrol */}
+                    <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+                      <div className="flex items-center gap-4">
+                        <button 
+                          onClick={togglePlay}
+                          className="text-white hover:text-blue-400 transition-colors p-3 rounded-full bg-black/40 backdrop-blur-sm hover:bg-black/60 border border-white/20"
+                          aria-label={isPlaying ? 'Pause' : 'Play'}
+                        >
+                          {isPlaying ? <HiOutlinePause className="w-10 h-10" /> : <HiOutlinePlay className="w-10 h-10" />}
+                        </button>
+                        <button 
+                          onClick={toggleMute}
+                          className="text-white hover:text-blue-400 transition-colors p-2 rounded-full bg-black/40 backdrop-blur-sm hover:bg-black/60 border border-white/20"
+                          aria-label={isMuted ? 'Unmute' : 'Mute'}
+                        >
+                          {isMuted ? <HiOutlineVolumeOff className="w-5 h-5" /> : <HiOutlineVolumeUp className="w-5 h-5" />}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <p className="text-sm text-slate-500 text-center mt-6 italic flex items-center justify-center gap-2">
+              <span className="inline-block w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+              Video hasil instalasi audio premium di workshop Khairul Audio
+              <span className="inline-block w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+            </p>
+          </div>
+        </section>
+
         {/* ================= KONTAK & LOKASI ================= */}
         <section ref={contactRef} className="border-t border-slate-200 bg-white mb-8">
           <div className="flex flex-col lg:flex-row">
@@ -255,7 +380,7 @@ export default function AboutPage() {
                   <HiPhone className="w-6 h-6 text-blue-400 flex-shrink-0 mt-0.5" />
                   <div>
                     <h4 className="font-bold text-lg mb-0.5">Hubungi Kami</h4>
-                    <p className="text-slate-300">0812-6565-9219</p>
+                    <p className="text-slate-300">0853-5944-6034</p>
                     <span className="inline-block mt-1 text-[11px] font-semibold bg-blue-500 text-white px-2 py-0.5 rounded">WhatsApp Tersedia</span>
                   </div>
                 </div>
@@ -293,7 +418,6 @@ export default function AboutPage() {
                 onError={(e) => { e.target.style.display = 'none'; }}
               />
               <div className="absolute inset-0 flex items-center justify-center bg-slate-900/10 group-hover:bg-transparent transition-colors duration-300">
-                {/* Efek denyut (Pulse) agar lebih terlihat seperti tombol aktif */}
                 <div className="relative flex items-center justify-center">
                   <div className="absolute w-16 h-16 bg-blue-500 rounded-full opacity-40 animate-ping"></div>
                   <div className="w-14 h-14 bg-slate-900 rounded-full flex items-center justify-center shadow-2xl border-2 border-white relative z-10 transform transition-transform duration-300 group-hover:scale-110 group-hover:bg-blue-600">

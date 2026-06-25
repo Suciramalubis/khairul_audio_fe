@@ -17,10 +17,10 @@ export default function Footer() {
 
   const config = {
     address: "Jl. T. Amir Hamzah, Sei Agul, Kec. Medan Bar., Kota Medan, Sumatera Utara 20235",
-    phone: "0812-6565-9219",
+    phone: "0853-5944-6034",
     email: "khairulaudioo@gmail.com",
     businessHours: "Senin - Minggu: 09:00 - 20:00",
-    whatsappNumber: "6281265659219"
+    whatsappNumber: "6285359446034"
   };
 
   const socialLinks = [
@@ -150,7 +150,7 @@ export default function Footer() {
                 <FaClock className="w-4 h-4 flex-shrink-0" />
                 <span className="text-sm">{config.businessHours}</span>
               </div>
-              <a href={`https://wa.me/${config.whatsappNumber}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-blue-500 transition-colors mt-4">
+              <a href={`https://wa.me/${config.whatsappNumber}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-green-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-green-700 transition-colors mt-4">
                 <FaWhatsapp className="w-4 h-4" />
                 Chat WhatsApp
               </a>
