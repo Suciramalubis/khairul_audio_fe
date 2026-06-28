@@ -39,6 +39,13 @@ const getPriceInfo = (product) => {
   return { hasDiscount: false, price: originalPrice, originalPrice };
 };
 
+// --- Fungsi untuk menghitung rata-rata rating ---
+const getAverageRating = (reviews) => {
+  if (!reviews || reviews.length === 0) return 0;
+  const total = reviews.reduce((acc, r) => acc + r.rating, 0);
+  return total / reviews.length;
+};
+
 // =====================================================================
 // KOMPONEN TOAST PREMIUM (Modern E-commerce Style)
 // =====================================================================
@@ -340,6 +347,16 @@ export default function ProductsPage() {
               const isCartLoading = cartLoading === product.id;
               const isWishlistLoading = wishlistLoading === product.id;
 
+              // --- LOGIC PERHITUNGAN RATING & TERJUAL ---
+              const reviews = product.reviews || [];
+              const averageRating = getAverageRating(reviews);
+              const reviewCount = reviews.length;
+
+              let soldCount = Number(product.total_sold || product.sold_count || 0);
+              if (soldCount === 0 && reviewCount > 0) {
+                soldCount = reviewCount;
+              }
+
               return (
                 <div
                   key={product.id}
@@ -391,11 +408,15 @@ export default function ProductsPage() {
                       <h4 className="text-[13px] text-slate-800 font-bold line-clamp-2 leading-snug mt-1">
                         {product.name}
                       </h4>
+                      
+                      {/* --- TAMPILAN RATING & TERJUAL (ASLI) --- */}
                       <div className="flex items-center gap-1 mt-1.5">
                         <HiStar className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                        <span className="text-[11px] text-slate-600 font-medium">4.9</span>
+                        <span className="text-[11px] text-slate-600 font-medium">
+                          {averageRating > 0 ? averageRating.toFixed(1) : '0'}
+                        </span>
                         <span className="text-slate-300 text-[10px] mx-0.5">•</span>
-                        <span className="text-[11px] text-slate-500">100+ terjual</span>
+                        <span className="text-[11px] text-slate-500">{soldCount} terjual</span>
                       </div>
 
                       <div className="mt-2 mb-1">

@@ -46,6 +46,13 @@ const getPriceInfo = (product) => {
   return { hasDiscount: false, price: originalPrice, originalPrice };
 };
 
+// --- Fungsi untuk menghitung rata-rata rating ---
+const getAverageRating = (reviews) => {
+  if (!reviews || reviews.length === 0) return 0;
+  const total = reviews.reduce((acc, r) => acc + r.rating, 0);
+  return total / reviews.length;
+};
+
 export default function CartPage() {
   const { cartItems, updateQuantity, removeFromCart, addToCart, loading: cartLoading } = useCart();
   const { user } = useAuth();
@@ -66,7 +73,9 @@ export default function CartPage() {
         const allProducts = response.data.data || response.data;
 
         if (Array.isArray(allProducts)) {
-          const shuffled = allProducts.sort(() => 0.10 - Math.random());
+          // Opsional: Filter stok > 0 untuk rekomendasi
+          const availableProducts = allProducts.filter(p => Number(p.stock) > 0);
+          const shuffled = availableProducts.sort(() => 0.10 - Math.random());
           setRecommendedProducts(shuffled.slice(0, 10));
         }
       } catch (err) {
@@ -437,6 +446,23 @@ export default function CartPage() {
                     const priceInfo = getPriceInfo(product);
                     const isWishlistLoading = wishlistLoading === product.id;
 
+                    // --- LOGIC PERHITUNGAN RATING & TERJUAL (Dinamis) ---
+                    const reviews = product.reviews || [];
+                    
+                    let averageRating = 0;
+                    if (product.rating !== undefined && product.rating !== null) {
+                      averageRating = Number(product.rating);
+                    } else if (product.average_rating !== undefined && product.average_rating !== null) {
+                      averageRating = Number(product.average_rating);
+                    } else {
+                      averageRating = getAverageRating(reviews);
+                    }
+
+                    let soldCount = Number(product.total_sold || product.sold_count || product.sold || 0);
+                    if (soldCount === 0 && reviews.length > 0) {
+                      soldCount = reviews.length;
+                    }
+
                     return (
                       <div key={product.id} className="bg-white border border-slate-200 rounded-md hover:border-blue-400 hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden group relative">
                         {/* Tombol wishlist */}
@@ -484,12 +510,19 @@ export default function CartPage() {
                           <h4 className="text-[11px] sm:text-[12px] text-slate-800 font-semibold line-clamp-2 leading-snug min-h-[32px] hover:text-blue-600 transition">
                             {product.name}
                           </h4>
+
+                          {/* --- DATA RATING & TERJUAL (DINAMIS) --- */}
                           <div className="flex items-center gap-1">
                             <HiStar className="w-3 h-3 text-amber-400 flex-shrink-0" />
-                            <span className="text-[10px] text-slate-500 font-medium">4.9</span>
+                            <span className="text-[10px] text-slate-500 font-medium">
+                              {averageRating > 0 ? averageRating.toFixed(1) : '0'}
+                            </span>
                             <span className="text-slate-300 text-[10px]">·</span>
-                            <span className="text-[10px] text-slate-400">100+ terjual</span>
+                            <span className="text-[10px] text-slate-400">
+                              {soldCount > 0 ? `${soldCount} terjual` : 'Baru rilis'}
+                            </span>
                           </div>
+
                           <div className="flex items-baseline gap-1.5 flex-wrap mt-0.5">
                             <span className="text-[13px] sm:text-[14px] font-extrabold text-slate-900 leading-none">
                               Rp {new Intl.NumberFormat('id-ID').format(priceInfo.price)}
@@ -500,6 +533,7 @@ export default function CartPage() {
                               </span>
                             )}
                           </div>
+                          
                           <button
                             onClick={(e) => {
                               e.preventDefault();

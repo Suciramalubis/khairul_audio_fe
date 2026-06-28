@@ -1,3 +1,5 @@
+// Lokasi: src/components/Navbar.jsx
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -169,6 +171,30 @@ export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
+  
+  // --- State untuk Top Banner Slider ---
+  const [bannerIndex, setBannerIndex] = useState(0);
+  const [bannerVisible, setBannerVisible] = useState(true);
+
+  const bannerTexts = [
+    "🚗 Spesialis Audio Mobil Premium · Garansi Resmi · Pengiriman Seluruh Indonesia",
+    "🎵 Dapatkan Suara Jernih dengan Produk Original Bergaransi",
+    "🔧 Instalasi Profesional oleh Teknisi Berpengalaman",
+    "💰 Promo Spesial! Diskon Menarik untuk Produk Pilihan",
+    "📞 Konsultasi Audio Mobil Gratis Hubungi Kami Sekarang"
+  ];
+
+  // --- Efek slider banner otomatis ---
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBannerVisible(false);
+      setTimeout(() => {
+        setBannerIndex((prev) => (prev + 1) % bannerTexts.length);
+        setBannerVisible(true);
+      }, 300);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [bannerTexts.length]);
 
   const { cartItems } = useCart() || { cartItems: [] };
   const displayCartCount = cartItems?.length || 0;
@@ -224,11 +250,29 @@ export default function Navbar() {
         ${isScrolled ? 'shadow-sm border-b border-stone-200' : 'border-b border-stone-100'}`}
       style={{ fontFamily: "'DM Sans', 'Outfit', sans-serif" }}
     >
-      {/* Top banner */}
-      <div className="bg-stone-900 text-center py-2 px-4 hidden md:block">
-        <p className="text-[11px] text-slate-300 tracking-widest uppercase font-medium">
-          Spesialis Audio Mobil Premium &nbsp;·&nbsp; Garansi Resmi &nbsp;·&nbsp; Pengiriman Seluruh Indonesia
-        </p>
+      {/* --- CSS KHUSUS UNTUK ANIMASI FADE SLIDER --- */}
+      <style>{`
+        @keyframes fadeBannerIn {
+          0% { opacity: 0; transform: translateY(6px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        .banner-fade-in {
+          animation: fadeBannerIn 0.5s ease forwards;
+        }
+        .banner-fade-out {
+          opacity: 0;
+          transform: translateY(-6px);
+          transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+      `}</style>
+
+      {/* --- TOP BANNER (SLIDER TEKS) --- */}
+      <div className="bg-stone-900 py-2 hidden md:flex overflow-hidden w-full relative justify-center items-center">
+        <div className={`text-[11px] text-slate-300 tracking-widest uppercase font-medium px-8 whitespace-nowrap text-center ${
+          bannerVisible ? 'banner-fade-in' : 'banner-fade-out'
+        }`}>
+          {bannerTexts[bannerIndex]}
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -77,6 +77,13 @@ const getPriceInfo = (product) => {
   return { hasDiscount: false, price: originalPrice, originalPrice };
 };
 
+// --- Fungsi untuk menghitung rata-rata rating ---
+const getAverageRating = (reviews) => {
+  if (!reviews || reviews.length === 0) return 0;
+  const total = reviews.reduce((acc, r) => acc + r.rating, 0);
+  return total / reviews.length;
+};
+
 // ========== HERO SLIDER (background putih gradasi langit) ==========
 function HeroSlider() {
   const [current, setCurrent] = useState(0);
@@ -218,6 +225,8 @@ export default function HomePage() {
         const response = await axios.get(API_URL);
         let dataArray = response.data.data || response.data;
         if (Array.isArray(dataArray)) {
+          // Opsional: Filter stok > 0 agar yang stok habis tidak tampil di beranda
+          dataArray = dataArray.filter(p => Number(p.stock) > 0);
           setNewProducts(dataArray.slice(0, 10));
         }
       } catch (error) {
@@ -358,6 +367,23 @@ export default function HomePage() {
                   imgUrl = getImageUrl(imgUrl);
 
                   const priceInfo = getPriceInfo(product);
+                  
+                  // --- LOGIC PERHITUNGAN RATING & TERJUAL (Sama dengan Halaman Produk & Detail) ---
+                  const reviews = product.reviews || [];
+                  
+                  let averageRating = 0;
+                  if (product.rating !== undefined && product.rating !== null) {
+                    averageRating = Number(product.rating);
+                  } else if (product.average_rating !== undefined && product.average_rating !== null) {
+                    averageRating = Number(product.average_rating);
+                  } else {
+                    averageRating = getAverageRating(reviews);
+                  }
+
+                  let soldCount = Number(product.total_sold || product.sold_count || product.sold || 0);
+                  if (soldCount === 0 && reviews.length > 0) {
+                    soldCount = reviews.length;
+                  }
 
                   return (
                     <div
@@ -413,11 +439,16 @@ export default function HomePage() {
                             {product.name}
                           </h4>
 
-                          <div className="flex items-center gap-1">
+                          {/* --- DATA RATING & TERJUAL (DINAMIS) --- */}
+                          <div className="flex items-center gap-1 mt-1">
                             <HiStar className="w-3 h-3 text-amber-400 flex-shrink-0" />
-                            <span className="text-[10px] text-slate-500 font-medium">4.9</span>
+                            <span className="text-[10px] text-slate-500 font-medium">
+                              {averageRating > 0 ? averageRating.toFixed(1) : '0'}
+                            </span>
                             <span className="text-slate-300 text-[10px]">·</span>
-                            <span className="text-[10px] text-slate-400">Baru Rilis</span>
+                            <span className="text-[10px] text-slate-400">
+                              {soldCount > 0 ? `${soldCount} terjual` : 'Baru rilis'}
+                            </span>
                           </div>
 
                           <div className="flex items-baseline gap-1.5 flex-wrap mt-0.5">
