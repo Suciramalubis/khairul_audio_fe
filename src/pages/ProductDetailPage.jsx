@@ -1,3 +1,5 @@
+// Lokasi: src/pages/ProductDetailPage.jsx
+
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate, Link } from 'react-router-dom';
@@ -40,6 +42,13 @@ const getPriceInfo = (product) => {
     };
   }
   return { hasDiscount: false, price: originalPrice, originalPrice };
+};
+
+// --- Fungsi untuk menghitung rata-rata rating ---
+const getAverageRating = (reviews) => {
+  if (!reviews || reviews.length === 0) return 0;
+  const total = reviews.reduce((acc, r) => acc + r.rating, 0);
+  return total / reviews.length;
 };
 
 export default function ProductDetailPage() {
@@ -275,6 +284,17 @@ export default function ProductDetailPage() {
     );
   }
 
+  // --- Data dinamis untuk rating & terjual ---
+  const reviews = product.reviews || [];
+  const averageRating = getAverageRating(reviews);
+  const reviewCount = reviews.length;
+  
+  // PERBAIKAN AKHIR: Menarik 'total_sold' yang baru saja kita tanam di Model Laravel
+  let soldCount = Number(product.total_sold || product.sold_count || 0);
+  if (soldCount === 0 && reviewCount > 0) {
+    soldCount = reviewCount;
+  }
+
   const images = getAllImages();
 
   return (
@@ -334,8 +354,9 @@ export default function ProductDetailPage() {
                         setMainImage(img);
                         setSelectedImageIndex(idx);
                       }}
-                      className={`flex-shrink-0 w-14 h-14 bg-slate-50 rounded-lg overflow-hidden border-2 transition p-1 ${selectedImageIndex === idx ? 'border-blue-500 shadow-sm' : 'border-transparent opacity-70 hover:opacity-100'
-                        }`}
+                      className={`flex-shrink-0 w-14 h-14 bg-slate-50 rounded-lg overflow-hidden border-2 transition p-1 ${
+                        selectedImageIndex === idx ? 'border-blue-500 shadow-sm' : 'border-transparent opacity-70 hover:opacity-100'
+                      }`}
                     >
                       <img src={img} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
                     </button>
@@ -350,15 +371,18 @@ export default function ProductDetailPage() {
                 {product.name}
               </h1>
 
+              {/* ===== RATING & TERJUAL (DATA ASLI) ===== */}
               <div className="flex items-center gap-2 text-xs md:text-sm text-slate-500 font-medium mb-4">
                 <div className="flex items-center gap-0.5 text-amber-500">
                   <HiStar className="w-4 h-4 fill-amber-500" />
-                  <span className="font-bold text-slate-800 text-[13px]">4.9</span>
+                  <span className="font-bold text-slate-800 text-[13px]">
+                    {averageRating > 0 ? averageRating.toFixed(1) : '0'}
+                  </span>
                 </div>
                 <span className="text-slate-300">|</span>
-                <span className="text-slate-600">{product?.reviews ? product.reviews.length : 0} Ulasan</span>
+                <span className="text-slate-600">{reviewCount} Ulasan</span>
                 <span className="text-slate-300">|</span>
-                <span>Terjual <span className="text-slate-700 font-semibold">100+</span></span>
+                <span>Terjual <span className="text-slate-700 font-semibold">{soldCount}</span></span>
 
                 <div className="flex gap-2 ml-auto">
                   <button onClick={handleShare} className="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-50 rounded-md transition" title="Bagikan">
@@ -471,8 +495,9 @@ export default function ProductDetailPage() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`py-3.5 font-bold text-xs md:text-sm transition-all relative ${activeTab === tab ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'
-                    }`}
+                  className={`py-3.5 font-bold text-xs md:text-sm transition-all relative ${
+                    activeTab === tab ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'
+                  }`}
                 >
                   {tab}
                   {activeTab === tab && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 rounded-t-full"></div>}
@@ -490,13 +515,13 @@ export default function ProductDetailPage() {
             )}
             {activeTab === 'Ulasan' && (
               <div>
-                {product?.reviews && product.reviews.length > 0 ? (
+                {reviewCount > 0 ? (
                   <div className="space-y-6">
                     {/* Ringkasan rating */}
                     <div className="flex items-center gap-4 mb-8 p-4 bg-blue-50/50 rounded-xl border border-blue-100">
                       <div className="text-center">
                         <p className="text-3xl font-black text-blue-600">
-                          {Number((product.reviews.reduce((acc, curr) => acc + curr.rating, 0) / product.reviews.length).toFixed(1))}
+                          {averageRating.toFixed(1)}
                         </p>
                         <p className="text-xs font-bold text-blue-700 uppercase tracking-wide mt-1">Rata-rata</p>
                       </div>
@@ -504,11 +529,11 @@ export default function ProductDetailPage() {
                         <div className="flex items-center gap-1 mb-1">
                           {[...Array(5)].map((_, i) => <HiStar key={i} className="w-5 h-5 text-amber-400" />)}
                         </div>
-                        <p className="text-xs text-gray-500 font-medium">Berdasarkan {product.reviews.length} ulasan pembeli</p>
+                        <p className="text-xs text-gray-500 font-medium">Berdasarkan {reviewCount} ulasan pembeli</p>
                       </div>
                     </div>
 
-                    {product.reviews.map((review, i) => (
+                    {reviews.map((review, i) => (
                       <div key={i} className="border-b border-gray-100 pb-6 last:border-0 last:pb-0">
                         <div className="flex gap-4">
                           <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold uppercase shrink-0">
@@ -582,9 +607,16 @@ export default function ProductDetailPage() {
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
               {relatedProducts.map((item) => {
-                let imgUrl = item.image_url;
-                imgUrl = getImageUrl(imgUrl);
+                let imgUrl = getImageUrl(item.image_url);
                 const priceInfo = getPriceInfo(item);
+                const itemReviews = item.reviews || [];
+                const itemAvgRating = getAverageRating(itemReviews);
+                
+                // PERBAIKAN REKOMENDASI TERJUAL
+                let itemSold = Number(item.total_sold || item.sold_count || 0);
+                if (itemSold === 0 && itemReviews.length > 0) {
+                  itemSold = itemReviews.length;
+                }
 
                 return (
                   <Link
@@ -636,9 +668,11 @@ export default function ProductDetailPage() {
                       </h4>
                       <div className="flex items-center gap-1">
                         <HiStar className="w-3 h-3 text-amber-400 flex-shrink-0" />
-                        <span className="text-[10px] text-slate-500 font-medium">4.9</span>
+                        <span className="text-[10px] text-slate-500 font-medium">
+                          {itemAvgRating > 0 ? itemAvgRating.toFixed(1) : '0'}
+                        </span>
                         <span className="text-slate-300 text-[10px]">·</span>
-                        <span className="text-[10px] text-slate-400">100+ terjual</span>
+                        <span className="text-[10px] text-slate-400">{itemSold} terjual</span>
                       </div>
                       <div className="flex items-baseline gap-1.5 flex-wrap mt-0.5">
                         <span className="text-[14px] font-extrabold text-slate-900 leading-none">
